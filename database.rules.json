@@ -1,0 +1,16 @@
+{
+  "rules": {
+    "users": {
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid"
+      }
+    },
+    "families": {
+      "$fid": {
+        ".read": "root.child('users/'+auth.uid).val() == $fid",
+        ".write": "root.child('users/'+auth.uid).val() == $fid"
+      }
+    }
+  }
+}

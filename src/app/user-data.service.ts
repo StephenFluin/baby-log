@@ -33,7 +33,7 @@ export class UserData {
                     if (!familyId) {
                         familyId = this.db
                             .list(`families`)
-                            .push({ creationDate: new Date().toISOString() }).key;
+                            .push({ creationDate: localeIsoString(new Date()) }).key;
                         this.db.object(`users/${this.auth.latestUid}`).set(familyId);
                     }
                     this.familyId = familyId;
@@ -58,7 +58,7 @@ export class UserData {
         if (!this.data.events) {
             this.data.events = [];
         }
-        this.data.events.unshift({ date: new Date().toISOString().substr(0, 10), activities: [] });
+        this.data.events.unshift({ date: localeIsoString(new Date()).substr(0, 10), activities: [] });
         this.save();
     }
     deleteDay(index: number) {
@@ -72,7 +72,7 @@ export class UserData {
         this.data.events[index].activities.unshift({
             activity: activity,
             activityDetails: activityDetails,
-            time: new Date().toISOString().substring(0, 16),
+            time: localeIsoString(new Date()).substring(0, 16),
         });
         this.save();
     }
@@ -84,4 +84,27 @@ export class UserData {
         this.data.events[eventIndex].activities[activityIndex].time = newValue;
         this.save();
     }
+
+    join(uid, familyId) {
+        this.db.object(`users/${uid}`).set(familyId);
+        window.location.reload();
+    }
+}
+
+
+export function localeIsoString(date) {
+    const tzo = -date.getTimezoneOffset(),
+        dif = tzo >= 0 ? '+' : '-',
+        pad = function(num) {
+            const norm = Math.floor(Math.abs(num));
+            return (norm < 10 ? '0' : '') + norm;
+        };
+    return date.getFullYear() +
+        '-' + pad(date.getMonth() + 1) +
+        '-' + pad(date.getDate()) +
+        'T' + pad(date.getHours()) +
+        ':' + pad(date.getMinutes()) +
+        ':' + pad(date.getSeconds()) +
+        dif + pad(tzo / 60) +
+        ':' + pad(tzo % 60);
 }
