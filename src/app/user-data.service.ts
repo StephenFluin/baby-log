@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { AngularFireDatabase } from '@angular/fire/database';
 import { Auth } from './auth.service';
 import { switchMap, tap } from 'rxjs/operators';
+import { Observable } from 'rxjs';
 
 export interface Data {
     events: {
@@ -28,7 +29,12 @@ export class UserData {
         this.auth.uid
             .pipe(
                 tap(uid => console.log('data got a new uid', uid)),
-                switchMap(uid => this.db.object(`users/${uid}`).valueChanges()),
+                switchMap(uid => {
+                    if (!uid) {
+                        return Observable.empty();
+                    }
+                    return this.db.object(`users/${uid}`).valueChanges();
+                }),
                 tap(fid => console.log('data got a new fid', fid)),
                 switchMap(familyId => {
                     if (!familyId) {
@@ -49,7 +55,6 @@ export class UserData {
                 }
                 this.data = <Data>data;
             });
-
     }
 
     save() {
