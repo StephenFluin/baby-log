@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { AngularFireDatabase } from '@angular/fire/database';
 import { Auth } from './auth.service';
 import { switchMap, tap } from 'rxjs/operators';
-import { Observable } from 'rxjs';
+import { empty } from 'rxjs';
 
 export interface Data {
     events: {
@@ -31,7 +31,7 @@ export class UserData {
                 tap(uid => console.log('data got a new uid', uid)),
                 switchMap(uid => {
                     if (!uid) {
-                        return Observable.empty();
+                        return empty();
                     }
                     return this.db.object(`users/${uid}`).valueChanges();
                 }),
