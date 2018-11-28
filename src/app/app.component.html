@@ -4,13 +4,7 @@
         <button (click)="userData.createDay()">Create New Day</button>
         <div *ngFor="let day of data.events; index as i">
             <h2>{{ day.date }} (<span (click)="userData.deleteDay(i)">x</span>)</h2>
-            <button (click)="userData.addActivity(i, 'feed', 'left')">Feed L</button>
-            <button (click)="userData.addActivity(i, 'feed', 'right')">Feed R</button>
-            <button (click)="userData.addActivity(i, 'awake', '')">Awake</button>
-            <button (click)="userData.addActivity(i, 'asleep', 'chair')">Asleep in Chair</button>
-            <button (click)="userData.addActivity(i, 'asleep', 'bassinet')">
-                Asleep in Bassinet
-            </button>
+            <button *ngFor="let aType of activityTypes | keyvalue" (click)="userData.addActivity(i, aType.key ,'')">{{aType.key}}</button>
             <table>
                 <tr *ngFor="let activity of day.activities; index as activityIndex">
                     <td>
@@ -28,7 +22,14 @@
                         </span>
                     </td>
                     <td>{{ activity.activity }}</td>
-                    <td>({{ activity.activityDetails }})</td>
+                    <td><select *ngIf="activityTypes[activity.activity] && activityTypes[activity.activity].length > 0; else raw" (input)="activity.activityDetails = $event.target.value;userData.save();">
+                        <option *ngFor="let option of activityTypes[activity.activity]" [selected]="option === activity.activityDetails">
+                            {{option}}
+                        </option>
+                        <option *ngIf="activityTypes[activity.activity] && activityTypes[activity.activity].indexOf(activity.activityDetails) === -1 && activity.activityDetails">{{activity.activityDetails}}</option>
+                    </select>
+                    <ng-template #raw>{{activity.activityDetails}}</ng-template>
+                </td>
                     <td>(<span (click)="userData.deleteActivity(i, activityIndex)">x</span>)</td>
                 </tr>
             </table>

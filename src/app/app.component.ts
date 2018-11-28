@@ -9,5 +9,22 @@ import { UserData } from './user-data.service';
 })
 export class AppComponent {
     title = 'baby-log';
+    activityTypes = {
+        'feed': [
+            'left',
+            'right',
+        ],
+        'awake': [
+        ],
+        'asleep': [
+            'chair',
+            'bassinet',
+            'lap',
+        ],
+        'burping': [
+        ],
+        'diaper': [
+        ]
+    };
     constructor(public auth: Auth, public userData: UserData) {}
 }
