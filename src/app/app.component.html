@@ -1,10 +1,41 @@
-<ng-container *ngIf="auth.uid | async ; else login" >
- <div *ngIf="userData.data as data">{{data | json}}
-    <div *ngFor="let day of data.events">{{day.date | date}}</div>
-    <button (click)="userData.createDay()">Create New Day</button>
-</div>
+<ng-container *ngIf="(auth.uid | async); else: login">
+    <div *ngIf="userData.data as data">
+        <button (click)="userData.createDay()">Create New Day</button>
+        <div *ngFor="let day of data.events; index as i">
+            <h2>{{ day.date }} (<span (click)="userData.deleteDay(i)">x</span>)</h2>
+            <button (click)="userData.addActivity(i, 'feed', 'left')">Feed L</button>
+            <button (click)="userData.addActivity(i, 'feed', 'right')">Feed R</button>
+            <button (click)="userData.addActivity(i, 'awake', '')">Awake</button>
+            <button (click)="userData.addActivity(i, 'asleep', 'chair')">Asleep in Chair</button>
+            <button (click)="userData.addActivity(i, 'asleep', 'bassinet')">
+                Asleep in Bassinet
+            </button>
+            <table>
+                <tr *ngFor="let activity of day.activities; index as activityIndex">
+                    <td>
+                        <span
+                            contenteditable="true"
+                            (input)="
+                                userData.updateTime(
+                                    i,
+                                    activityIndex,
+                                    activity.time.substring(0, 11) + $event.target.innerText
+                                )
+                            "
+                        >
+                            {{ activity.time.substring(11) }}
+                        </span>
+                    </td>
+                    <td>{{ activity.activity }}</td>
+                    <td>({{ activity.activityDetails }})</td>
+                    <td>(<span (click)="userData.deleteActivity(i, activityIndex)">x</span>)</td>
+                </tr>
+            </table>
+        </div>
+
+    </div>
 </ng-container>
 <ng-template #login>
-  <h1>Login to use the baby log</h1>
-  <button (click)="auth.login()">Login</button>
+    <h1>Login to use the baby log</h1>
+    <button (click)="auth.login()">Login</button>
 </ng-template>
