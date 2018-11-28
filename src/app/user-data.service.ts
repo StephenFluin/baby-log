@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
 import { AngularFireDatabase } from '@angular/fire/database';
-import { defineBase } from '@angular/core/src/render3';
 import { Auth } from './auth.service';
 import { switchMap, tap } from 'rxjs/operators';
 
@@ -22,6 +21,8 @@ export interface Data {
 export class UserData {
     familyId;
     data: Data;
+
+    timerTimeout;
 
     constructor(private auth: Auth, private db: AngularFireDatabase) {
         this.auth.uid
@@ -48,6 +49,7 @@ export class UserData {
                 }
                 this.data = <Data>data;
             });
+
     }
 
     save() {
@@ -58,7 +60,10 @@ export class UserData {
         if (!this.data.events) {
             this.data.events = [];
         }
-        this.data.events.unshift({ date: localeIsoString(new Date()).substr(0, 10), activities: [] });
+        this.data.events.unshift({
+            date: localeIsoString(new Date()).substr(0, 10),
+            activities: [],
+        });
         this.save();
     }
     deleteDay(index: number) {
@@ -80,9 +85,15 @@ export class UserData {
         this.data.events[eventIndex].activities.splice(activityIndex, 1);
         this.save();
     }
-    updateTime(eventIndex: number, activityIndex: number, newValue: string) {
-        this.data.events[eventIndex].activities[activityIndex].time = newValue;
-        this.save();
+    updateTime(eventIndex: number, activityIndex: number, newValue: string, domEvent: Event) {
+        if (this.timerTimeout) {
+            clearTimeout(this.timerTimeout);
+        }
+        this.timerTimeout = setTimeout(() => {
+            this.data.events[eventIndex].activities[activityIndex].time = newValue;
+            this.save();
+            this.timerTimeout = null;
+        }, 3000);
     }
 
     join(uid, familyId) {
@@ -91,7 +102,6 @@ export class UserData {
     }
 }
 
-
 export function localeIsoString(date) {
     const tzo = -date.getTimezoneOffset(),
         dif = tzo >= 0 ? '+' : '-',
@@ -99,12 +109,21 @@ export function localeIsoString(date) {
             const norm = Math.floor(Math.abs(num));
             return (norm < 10 ? '0' : '') + norm;
         };
-    return date.getFullYear() +
-        '-' + pad(date.getMonth() + 1) +
-        '-' + pad(date.getDate()) +
-        'T' + pad(date.getHours()) +
-        ':' + pad(date.getMinutes()) +
-        ':' + pad(date.getSeconds()) +
-        dif + pad(tzo / 60) +
-        ':' + pad(tzo % 60);
+    return (
+        date.getFullYear() +
+        '-' +
+        pad(date.getMonth() + 1) +
+        '-' +
+        pad(date.getDate()) +
+        'T' +
+        pad(date.getHours()) +
+        ':' +
+        pad(date.getMinutes()) +
+        ':' +
+        pad(date.getSeconds()) +
+        dif +
+        pad(tzo / 60) +
+        ':' +
+        pad(tzo % 60)
+    );
 }
