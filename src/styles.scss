@@ -1,1 +1,74 @@
 /* You can add global styles to this file, and also import other style files */
+
+* {
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+body {
+    font-size: 16px;
+}
+
+.activity-buttons {
+    margin-bottom: 8px;
+    display: flex;
+    flex-direction: row;
+
+    button.activity-type {
+        border-radius: 4px;
+        border: none;
+        background-color: #4c9ae4;
+        height: 32px;
+        width: 80px;
+        margin-right: 8px;
+        color: white;
+        font-size: 16px;
+    }
+}
+
+.icon-circle {
+    border-radius: 100%;
+    background-color: lightgray;
+    display: flex;
+    align-content: center;
+    justify-content: center;
+    padding: 6px;
+    margin: 0 8px;
+}
+
+select.custom-select {
+    width: 200px;
+    height: 32px;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 16px;
+    border: 1px solid #ced4da;
+    border-radius: 2px;
+    background-color: white;
+    position: relative;
+    vertical-align: middle;
+}
+
+button {
+    border-radius: 4px;
+    height: 32px;
+    font-size: 16px;
+    display: flex;
+    flex-direction: row;
+    align-content: center;
+    justify-content: center;
+    border-color: transparent;
+
+    &.button-standard {
+        background-color: #ced4da;
+        color: darkslategray;
+
+        span {
+            line-height: 20px;
+        }
+    }
+
+    &.button-icon-combo {
+        img {
+            margin-right: 4px;
+        }
+    }
+}
