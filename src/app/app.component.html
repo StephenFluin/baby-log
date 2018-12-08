@@ -1,9 +1,11 @@
 <ng-container *ngIf="(auth.state | async) as state; else: login">
-    <h1>Welcome {{state.displayName}}
-        <img style="height:16px;width:16px;" [src]="state.photoURL">
-    </h1>
-    <div *ngIf="userData.data as data">
-        <button class="button-standard button-icon-combo" (click)="userData.createDay()">
+    <div class="toolbar">
+        <span>Baby Log</span>
+        <img class="user-img" [src]="state.photoURL">
+    </div>
+
+    <div *ngIf="userData.data as data" class="main">
+        <button class="button-standard button-icon-combo button-important" (click)="userData.createDay()">
             <img src="../assets/images/baseline-add-24px.svg" height="20px" width="20px">
             <span>Create New Day</span>
         </button>
@@ -60,6 +62,8 @@
     </div>
 </ng-container>
 <ng-template #login>
-    <h1>Login to use the baby log</h1>
-    <button (click)="auth.login()">Login</button>
+    <div class="main">
+        <h1>Login to use the baby log</h1>
+        <button (click)="auth.login()">Login</button>
+    </div>
 </ng-template>
