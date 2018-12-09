@@ -9,10 +9,25 @@
             <img src="../assets/images/baseline-add-24px.svg" height="20px" width="20px">
             <span>Create New Day</span>
         </button>
+
         <div *ngFor="let day of data.events; index as i">
             <h2>{{ day.date }}
                 <img (click)="userData.deleteDay(i)" src="../assets/images/baseline-delete_forever-24px.svg" height="24px" width="24px">
             </h2>
+
+            <div class="highlight-box">
+                <span>Summary</span>
+                <br>
+                <p>
+                    <span>Max Times</span><br>
+                    <span>{{(day | summarizeEvent).summary['maxTimes'] | json}}</span>
+                </p>
+                <p>
+                    <span>Total Times</span><br>
+                    <span>{{(day | summarizeEvent).summary['totalTimes'] | json}}</span>
+                </p>
+            </div>
+
             <div class="activity-buttons">
                 <button class="activity-type" *ngFor="let aType of activityTypes | keyvalue" (click)="userData.addActivity(i, aType.key ,'')">{{aType.key}}</button>
             </div>
@@ -33,14 +48,14 @@
                     <td>{{ activity.activity }}</td>
                     <td>
                         <div>
-                        <select class="custom-select" *ngIf="activityTypes[activity.activity] && activityTypes[activity.activity].length > 0; else raw"
-                            (input)="activity.activityDetails = $event.target.value;userData.save();">
-                            <option *ngFor="let option of activityTypes[activity.activity]" [selected]="option === activity.activityDetails">
-                                {{option}}
-                            </option>
-                            <option *ngIf="activityTypes[activity.activity] && activityTypes[activity.activity].indexOf(activity.activityDetails) === -1 && activity.activityDetails">{{activity.activityDetails}}</option>
-                        </select>
-                    </div>
+                            <select class="custom-select" *ngIf="activityTypes[activity.activity] && activityTypes[activity.activity].length > 0; else raw"
+                                (input)="activity.activityDetails = $event.target.value;userData.save();">
+                                <option *ngFor="let option of activityTypes[activity.activity]" [selected]="option === activity.activityDetails">
+                                    {{option}}
+                                </option>
+                                <option *ngIf="activityTypes[activity.activity] && activityTypes[activity.activity].indexOf(activity.activityDetails) === -1 && activity.activityDetails">{{activity.activityDetails}}</option>
+                            </select>
+                        </div>
                         <ng-template #raw>{{activity.activityDetails}}</ng-template>
                     </td>
                     <td>
@@ -53,14 +68,18 @@
         </div>
 
     </div>
-    <div style="margin-top:250px;">User {{state.uid}}</div>
-    <h3>Join Family:</h3>
-    <input #familyId type="text">
-    <button (click)="userData.join(state.uid, familyId.value)">Join</button>
-    <div>
-        <button (click)="auth.logout()">Logout</button>
+
+    <div class="main">
+        <div style="margin-top:250px;">User {{state.uid}}</div>
+        <h3>Join Family:</h3>
+        <input #familyId type="text">
+        <button (click)="userData.join(state.uid, familyId.value)">Join</button>
+        <div>
+            <button (click)="auth.logout()">Logout</button>
+        </div>
     </div>
 </ng-container>
+
 <ng-template #login>
     <div class="main">
         <h1>Login to use the baby log</h1>

@@ -5,15 +5,17 @@ import { switchMap, tap } from 'rxjs/operators';
 import { empty } from 'rxjs';
 
 export interface Data {
-    events: {
-        date: string;
-        activities: {
-            activity: string;
-            activityDetails: string;
-            person?: string;
-            time: string;
-        }[];
+    events: Event[];
+}
+export interface Event {
+    date: string;
+    activities: {
+        activity: string;
+        activityDetails: string;
+        person?: string;
+        time: string;
     }[];
+    summary?;
 }
 
 @Injectable({
@@ -21,6 +23,9 @@ export interface Data {
 })
 export class UserData {
     familyId;
+    /**
+     * Synchronous local copy of data that we can modify
+     */
     data: Data;
 
     timerTimeout;
@@ -105,6 +110,8 @@ export class UserData {
         this.db.object(`users/${uid}`).set(familyId);
         window.location.reload();
     }
+
+
 }
 
 export function localeIsoString(date) {

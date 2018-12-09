@@ -5,9 +5,10 @@ import { AppComponent } from './app.component';
 import { AngularFireModule } from '@angular/fire';
 import { AngularFireAuthModule } from '@angular/fire/auth';
 import { AngularFireDatabaseModule } from '@angular/fire/database';
+import { SummarizeEventPipe } from './summarize-event.pipe';
 
 @NgModule({
-    declarations: [AppComponent],
+    declarations: [AppComponent, SummarizeEventPipe],
     imports: [
         BrowserModule,
         AngularFireModule.initializeApp({

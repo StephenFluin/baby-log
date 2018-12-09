@@ -41,11 +41,12 @@ body {
     margin-bottom: 16px;
     display: flex;
     flex-direction: row;
+    flex-wrap: wrap;
 
     button.activity-type {
         background-color: #4c9ae4;
         width: 80px;
-        margin-right: 8px;
+        margin: 0 4px 4px 0;
         color: white;
         font-size: 16px;
     }
@@ -53,7 +54,7 @@ body {
 
 .icon-circle {
     border-radius: 100%;
-    background-color: lightgray;
+    background-color: #eee;
     display: flex;
     align-content: center;
     justify-content: center;
@@ -101,5 +102,24 @@ button {
 
     &.button-important {
         font-weight: bold;
+    }
+}
+
+.highlight-box {
+    border-radius: 4px;
+    background-color: #eeeeee;
+    padding: 1rem;
+    margin: 1rem 0;
+
+    span {
+        margin-bottom: 4px;
+
+        &:first-child {
+            font-weight: bold;
+        }
+    }
+
+    p:last-child {
+        margin-bottom: 0;
     }
 }

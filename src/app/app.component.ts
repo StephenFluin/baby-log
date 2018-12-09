@@ -12,18 +12,25 @@ export class AppComponent {
         'feed': [
             'left',
             'right',
+            'bottle'
         ],
         'awake': [
         ],
         'asleep': [
             'chair',
             'bassinet',
+            'dockatot',
             'lap',
+            'arms'
         ],
         'burping': [
         ],
         'diaper': [
-        ]
+        ],
+        'bathing': [
+            'sponge',
+            'bath',
+        ],
     };
     constructor(public auth: Auth, public userData: UserData) {}
 }
