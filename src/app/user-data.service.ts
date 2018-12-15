@@ -77,8 +77,10 @@ export class UserData {
         this.save();
     }
     deleteDay(index: number) {
-        this.data.events.splice(index, 1);
-        this.save();
+        if (confirm('Are you sure you want to delete this day?')) {
+            this.data.events.splice(index, 1);
+            this.save();
+        }
     }
     addActivity(index: number, activity: string, activityDetails: string, person?: string) {
         if (!this.data.events[index].activities) {
@@ -110,8 +112,6 @@ export class UserData {
         this.db.object(`users/${uid}`).set(familyId);
         window.location.reload();
     }
-
-
 }
 
 export function localeIsoString(date) {
