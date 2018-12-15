@@ -20,11 +20,11 @@
                 <br>
                 <p>
                     <span>Max Times</span><br>
-                    <span>{{(day | summarizeEvent).summary['maxTimes'] | json}}</span>
+                    <span>{{(day | summarizeEvent)['maxTimes'] | json}}</span>
                 </p>
                 <p>
                     <span>Total Times</span><br>
-                    <span>{{(day | summarizeEvent).summary['totalTimes'] | json}}</span>
+                    <span>{{(day | summarizeEvent)['totalTimes'] | json}}</span>
                 </p>
             </div>
 

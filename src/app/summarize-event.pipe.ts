@@ -7,11 +7,16 @@ import { Event } from './user-data.service';
 export class SummarizeEventPipe implements PipeTransform {
     transform(value: Event, args?: any): any {
         const event: Event = Object.assign(value);
-        event.summary = {};
+
 
         let lastActivity;
         const maxTimes = {};
         const totalTimes = {};
+        const summary = {maxTimes: maxTimes, totalTimes: totalTimes};
+
+        if (!value || !value.activities || value.activities.length <= 0) {
+            return summary;
+        }
 
         for (const activity of value.activities) {
             // Generate summary for this "event" or day
@@ -33,11 +38,6 @@ export class SummarizeEventPipe implements PipeTransform {
             lastActivity = activity;
         }
 
-        event.summary = {
-            maxTimes: maxTimes,
-            totalTimes: totalTimes,
-        };
-        console.log('calculated summary as:',event.summary);
-        return event;
+        return summary;
     }
 }
