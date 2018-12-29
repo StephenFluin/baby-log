@@ -1,39 +1,62 @@
 <ng-container *ngIf="(auth.state | async) as state; else: login">
     <div class="toolbar">
         <span>Baby Log</span>
-        <img class="user-img" [src]="state.photoURL">
+        <div class="grid example">
+            <label>
+                <span>welcome</span>
+                <button mat-icon-button [matMenuTriggerFor]="menu" style="margin-right: 5px">
+                    <img class="user-img" [src]="state.photoURL">
+                </button>
+            </label>
+            <mat-menu #menu="matMenu" overlapTrigger="false">
+                <button mat-menu-item (click)="auth.logout()">
+                    <mat-icon>account_circle</mat-icon>
+                    <span>Logout</span>
+                </button>
+            </mat-menu>
+        </div>
     </div>
+    <mat-card  *ngIf="userData.data as data" >
+        <mat-card class="example-card">
+            <mat-card-header style="">
+                <mat-card-title>Join Family:</mat-card-title>
+                <mat-card-subtitle><div>User {{state.uid}}</div></mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+                <input #familyId required="required" class="baby-input" type="text">
+            </mat-card-content>
+            <mat-card-actions>
+                <button (click)="userData.join(state.uid, familyId.value)" class="baby-join">Join</button>
+            </mat-card-actions>
+        </mat-card>
 
-    <div *ngIf="userData.data as data" class="main">
-        <button class="button-standard button-icon-combo button-important" (click)="userData.createDay()">
-            <img src="../assets/images/baseline-add-24px.svg" height="20px" width="20px">
-            <span>Create New Day</span>
-        </button>
-
-        <div *ngFor="let day of data.events; index as i">
-            <h2>{{ day.date }}
-                <img (click)="userData.deleteDay(i)" src="../assets/images/baseline-delete_forever-24px.svg" height="24px" width="24px">
-            </h2>
-
-            <div class="highlight-box">
-                <span>Summary</span>
-                <br>
-                <p>
-                    <span>Max Times</span><br>
-                    <span>{{(day | summarizeEvent)['maxTimes'] | json}}</span>
-                </p>
-                <p>
-                    <span>Total Times</span><br>
-                    <span>{{(day | summarizeEvent)['totalTimes'] | json}}</span>
-                </p>
-            </div>
-
-            <div class="activity-buttons">
-                <button class="activity-type" *ngFor="let aType of activityTypes | keyvalue" (click)="userData.addActivity(i, aType.key ,'')">{{aType.key}}</button>
-            </div>
-            <table>
-                <tr *ngFor="let activity of day.activities; index as activityIndex">
-                    <td>
+        <mat-card style="margin-top: 10px">
+            <button class="button-standard button-icon-combo button-important" (click)="userData.createDay()">
+                <img src="../assets/images/baseline-add-24px.svg" height="20px" width="20px">
+                <span>Create New Day</span>
+            </button>
+            <div *ngFor="let day of data.events; index as i" >
+                <h2>{{ day.date }}
+                    <img (click)="userData.deleteDay(i)" src="../assets/images/baseline-delete_forever-24px.svg" height="24px" width="24px">
+                </h2>
+                <div class="highlight-box">
+                    <span>Summary</span>
+                    <br>
+                    <p>
+                        <span>Max Times</span><br>
+                        <span>{{(day | summarizeEvent)['maxTimes'] | json}}</span>
+                    </p>
+                    <p>
+                        <span>Total Times</span><br>
+                        <span>{{(day | summarizeEvent)['totalTimes'] | json}}</span>
+                    </p>
+                </div>
+                <div class="activity-buttons">
+                    <button class="activity-type" *ngFor="let aType of activityTypes | keyvalue" (click)="userData.addActivity(i, aType.key ,'')">{{aType.key}}</button>
+                </div>
+                <table>
+                    <tr *ngFor="let activity of day.activities; index as activityIndex">
+                        <td>
                         <span contenteditable="true" (input)="
                                 userData.updateTime(
                                     i,
@@ -44,45 +67,35 @@
                             ">
                             {{ activity.time.substring(11) }}
                         </span>
-                    </td>
-                    <td>{{ activity.activity }}</td>
-                    <td>
-                        <div>
-                            <select class="custom-select" *ngIf="activityTypes[activity.activity] && activityTypes[activity.activity].length > 0; else raw"
-                                (input)="activity.activityDetails = $event.target.value;userData.save();">
-                                <option *ngFor="let option of activityTypes[activity.activity]" [selected]="option === activity.activityDetails">
-                                    {{option}}
-                                </option>
-                                <option *ngIf="activityTypes[activity.activity] && activityTypes[activity.activity].indexOf(activity.activityDetails) === -1 && activity.activityDetails">{{activity.activityDetails}}</option>
-                            </select>
-                        </div>
-                        <ng-template #raw>{{activity.activityDetails}}</ng-template>
-                    </td>
-                    <td>
-                        <div class="icon-circle" (click)="userData.deleteActivity(i, activityIndex)">
-                            <img src="../assets/images/baseline-delete_forever-24px.svg" height="20px" width="20px">
-                        </div>
-                    </td>
-                </tr>
-            </table>
-        </div>
-
-    </div>
-
-    <div class="main">
-        <div style="margin-top:250px;">User {{state.uid}}</div>
-        <h3>Join Family:</h3>
-        <input #familyId type="text">
-        <button (click)="userData.join(state.uid, familyId.value)">Join</button>
-        <div>
-            <button (click)="auth.logout()">Logout</button>
-        </div>
-    </div>
+                        </td>
+                        <td>{{ activity.activity }}</td>
+                        <td>
+                            <div>
+                                <select class="custom-select" *ngIf="activityTypes[activity.activity] && activityTypes[activity.activity].length > 0; else raw"
+                                        (input)="activity.activityDetails = $event.target.value;userData.save();">
+                                    <option *ngFor="let option of activityTypes[activity.activity]" [selected]="option === activity.activityDetails">
+                                        {{option}}
+                                    </option>
+                                    <option *ngIf="activityTypes[activity.activity] && activityTypes[activity.activity].indexOf(activity.activityDetails) === -1 && activity.activityDetails">{{activity.activityDetails}}</option>
+                                </select>
+                            </div>
+                            <ng-template #raw>{{activity.activityDetails}}</ng-template>
+                        </td>
+                        <td>
+                            <div class="icon-circle" (click)="userData.deleteActivity(i, activityIndex)">
+                                <img src="../assets/images/baseline-delete_forever-24px.svg" height="20px" width="20px">
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </mat-card>
+    </mat-card>
 </ng-container>
 
 <ng-template #login>
-    <div class="main">
+    <div class="main baby-accueil">
         <h1>Login to use the baby log</h1>
-        <button (click)="auth.login()">Login</button>
+        <button (click)="auth.login()" class="btn-login">Login</button>
     </div>
 </ng-template>

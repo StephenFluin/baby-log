@@ -6,11 +6,26 @@ import { AngularFireModule } from '@angular/fire';
 import { AngularFireAuthModule } from '@angular/fire/auth';
 import { AngularFireDatabaseModule } from '@angular/fire/database';
 import { SummarizeEventPipe } from './summarize-event.pipe';
+import {BrowserAnimationsModule} from "@angular/platform-browser/animations";
+import {
+    MatButtonModule,
+    MatMenuModule,
+    MatToolbarModule,
+    MatIconModule,
+    MatCardModule,MatFormFieldModule
+} from '@angular/material';
 
 @NgModule({
     declarations: [AppComponent, SummarizeEventPipe],
     imports: [
         BrowserModule,
+        MatButtonModule,
+        MatMenuModule,
+        MatToolbarModule,
+        MatIconModule,
+        MatCardModule,
+        MatFormFieldModule,
+        BrowserAnimationsModule,
         AngularFireModule.initializeApp({
             apiKey: 'AIzaSyCl1gfM_tPg777Gfu_zOGWUnnMN4ed0JuI',
             authDomain: 'baby-log-7307f.firebaseapp.com',

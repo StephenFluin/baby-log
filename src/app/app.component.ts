@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import {Component} from '@angular/core';
 import { Auth } from './auth.service';
 import { UserData } from './user-data.service';
 

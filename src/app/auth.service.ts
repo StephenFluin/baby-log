@@ -15,11 +15,12 @@ export class Auth {
                 return null;
             }
         }),
-        tap(n => console.log('uid is', n)),
+        tap(n => {
+            console.log('uid is', n);
+        }),
         shareReplay(1),
     );
     state = this.afAuth.authState;
-
 
     latestUid = null;
     constructor(private afAuth: AngularFireAuth) {
