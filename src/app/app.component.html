@@ -1,18 +1,19 @@
+<div class="toolbar">
+    <span>Baby Log</span>
+    <img *ngIf="auth.state | async as state" class="user-img" [src]="state.photoURL">
+</div>
 <ng-container *ngIf="(auth.state | async) as state; else: login">
-    <div class="toolbar">
-        <span>Baby Log</span>
-        <img class="user-img" [src]="state.photoURL">
-    </div>
 
-    <div *ngIf="userData.data as data" class="main">
-        <button class="button-standard button-icon-combo button-important" (click)="userData.createDay()">
+
+    <div *ngIf="userData.eventList | async as events" class="main">
+        <button class="button-standard button-icon-combo button-important" (click)="userData.createEvent()">
             <img src="../assets/images/baseline-add-24px.svg" height="20px" width="20px">
             <span>Create New Day</span>
         </button>
 
-        <div *ngFor="let day of data.events; index as i">
-            <h2>{{ day.date }}
-                <img (click)="userData.deleteDay(i)" src="../assets/images/baseline-delete_forever-24px.svg" height="24px" width="24px">
+        <div *ngFor="let day of events; index as i">
+            <h2>{{ day.value.date }}
+                <img (click)="userData.deleteEvent(day.key)" src="../assets/images/baseline-delete_forever-24px.svg" height="24px" width="24px">
             </h2>
 
             <div class="highlight-box">
@@ -20,28 +21,27 @@
                 <br>
                 <p>
                     <span>Max Times</span><br>
-                    <span>{{(day | summarizeEvent)['maxTimes'] | json}}</span>
+                    <span>{{(day.value | summarizeEvent)['maxTimes'] | json}}</span>
                 </p>
                 <p>
                     <span>Total Times</span><br>
-                    <span>{{(day | summarizeEvent)['totalTimes'] | json}}</span>
+                    <span>{{(day.value | summarizeEvent)['totalTimes'] | json}}</span>
                 </p>
             </div>
 
             <div class="activity-buttons">
-                <button class="activity-type" *ngFor="let aType of activityTypes | keyvalue" (click)="userData.addActivity(i, aType.key ,'')">{{aType.key}}</button>
+                <button class="activity-type" *ngFor="let aType of activityTypes | keyvalue" (click)="userData.addActivity(day.key, day.value, aType.key ,'')">{{aType.key}}</button>
             </div>
             <table>
-                <tr *ngFor="let activity of day.activities; index as activityIndex">
+                <tr *ngFor="let activity of day.value.activities; index as activityIndex">
                     <td>
                         <span contenteditable="true" (input)="
-                                userData.updateTime(
-                                    i,
-                                    activityIndex,
-                                    activity.time.substring(0, 11) + $event.target.innerText,
-                                    $event
-                                )
-                            ">
+                        userData.updateTime(
+                            day.key,
+                            day.value,
+                            activityIndex,
+                            activity.time.substring(0, 11) + $event.target.innerText,
+                            $event)">
                             {{ activity.time.substring(11) }}
                         </span>
                     </td>
@@ -49,7 +49,7 @@
                     <td>
                         <div>
                             <select class="custom-select" *ngIf="activityTypes[activity.activity] && activityTypes[activity.activity].length > 0; else raw"
-                                (input)="activity.activityDetails = $event.target.value;userData.save();">
+                                (input)="activity.activityDetails = $event.target.value;userData.saveEvent(day.key, day.value)">
                                 <option *ngFor="let option of activityTypes[activity.activity]" [selected]="option === activity.activityDetails">
                                     {{option}}
                                 </option>
@@ -59,7 +59,7 @@
                         <ng-template #raw>{{activity.activityDetails}}</ng-template>
                     </td>
                     <td>
-                        <div class="icon-circle" (click)="userData.deleteActivity(i, activityIndex)">
+                        <div class="icon-circle" (click)="userData.deleteActivity(day.key, day.value, i, activityIndex)">
                             <img src="../assets/images/baseline-delete_forever-24px.svg" height="20px" width="20px">
                         </div>
                     </td>
