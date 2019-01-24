@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import { AngularFireDatabase, AngularFireList } from '@angular/fire/database';
 import { Auth } from './auth.service';
-import { switchMap, tap, map } from 'rxjs/operators';
-import { empty, Observable } from 'rxjs';
+import { switchMap, tap, map, shareReplay } from 'rxjs/operators';
+import { empty, Observable, BehaviorSubject } from 'rxjs';
 
 export interface Data {
     events: Event[];
@@ -26,14 +26,22 @@ export interface Type {
     providedIn: 'root',
 })
 export class UserData {
-    familyId;
+    familyId: string;
     /**
      * Synchronous local copy of data that we can modify
      */
     data: Data;
     events: AngularFireList<Event>;
-    eventList: Observable<{key: string, value: Event}[]>;
+    eventSource = new BehaviorSubject<Observable<{ key: string; value: Event }[]>>(empty());
+    eventList: Observable<{ key: string; value: Event }[]> = this.eventSource.pipe(
+        switchMap(inner => inner)
+    );
+
     types: AngularFireList<Type>;
+    typeSource = new BehaviorSubject<Observable<{ key: string; value: Type }[]>>(empty());
+    typeList: Observable<{ key: string; value: Type }[]> = this.typeSource.pipe(
+        switchMap(inner => inner)
+    );
 
     timerTimeout;
 
@@ -44,7 +52,7 @@ export class UserData {
                 if (!uid) {
                     return empty();
                 }
-                return this.db.object(`users/${uid}`).valueChanges();
+                return this.db.object<string>(`users/${uid}`).valueChanges();
             }),
             tap(familyId => {
                 console.log('data got a new fid', familyId);
@@ -56,20 +64,66 @@ export class UserData {
                 }
                 this.familyId = familyId;
                 console.log('family ID is ', familyId);
-                this.events = this.db.list(`families/${familyId}/events`, (ref => ref.orderByChild('date').limitToLast(3)));
+                this.events = this.db.list(`families/${familyId}/events`, ref =>
+                    ref.orderByChild('date').limitToLast(3)
+                );
                 this.types = this.db.list(`families/${familyId}/types`);
 
-                this.eventList = this.events.snapshotChanges().pipe(
-                    map(actions =>
-                        actions.map(a => {
-                            const data = a.payload.val() as Event;
-                            const key = a.payload.key;
-                            return { key: key, value: data };
+                this.eventSource.next(
+                    this.events.snapshotChanges().pipe(
+                        map(actions =>
+                            actions
+                                .map(a => {
+                                    const data = a.payload.val() as Event;
+                                    const key = a.payload.key;
+                                    return { key: key, value: data };
+                                })
+                                // Sort by date then activity 0 date
+                                .sort((a, b) => {
+                                    const av = a.value;
+                                    const bv = b.value;
+                                    if (av.date > bv.date) {
+                                        // a comes first
+                                        return -1;
+                                    } else if (
+                                        // equal dates
+                                        av.date === b.value.date
+                                    ) {
+                                        if (
+                                            av.activities &&
+                                            av.activities.length > 0 &&
+                                            bv.activities &&
+                                            bv.activities.length > 0
+                                        ) {
+                                            return av.activities[0].time > bv.activities[0].time
+                                                ? -1
+                                                : 1;
+                                        }
+                                        if (!bv.activities) {
+                                            // sort things missing activities first
+                                            return 1;
+                                        } else if (!av.activities) {
+                                            return -1;
+                                        }
+                                    } else {
+                                        // b comes first
+                                        return 1;
+                                    }
+                                })
+                        )
+                    )
+                );
+                this.typeSource.next(
+                    this.types.snapshotChanges().pipe(
+                        map(actions =>
+                            actions.map(a => {
+                                return { key: a.payload.key, value: a.payload.val() };
                             })
-                            .sort((a, b) => a.value.date > b.value.date ? -1 : 1)
-                    ),
-
-                  );            })
+                        ),
+                        shareReplay(1)
+                    )
+                );
+            })
         );
         familyIds.subscribe(next => {
             // One global subscription just to make the above work and populate our events
