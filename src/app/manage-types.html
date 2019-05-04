@@ -1,10 +1,12 @@
-<h2>Manage Types</h2>
-<div *ngIf="userData.typeList | async as types; else noTypes">
-    <div *ngFor="let type of types">
-        {{type.value | json}}
+<div class="main">
+    <h2>Manage Types</h2>
+    <div *ngIf="userData.typeList | async as types; else noTypes">
+        <div *ngFor="let type of types">
+            {{type.value | json}}
+        </div>
     </div>
-</div>
 
-<ng-template #noTypes>
-    We couldn't load the type list.
-</ng-template>
+    <ng-template #noTypes>
+        We couldn't load the type list.
+    </ng-template>
+</div>
