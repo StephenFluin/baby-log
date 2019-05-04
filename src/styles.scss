@@ -2,11 +2,16 @@
 
 * {
     font-family: Arial, Helvetica, sans-serif;
+    box-sizing: border-box;
 }
 
 body {
     font-size: 16px;
     margin: 0;
+}
+
+.flex {
+    display: flex;
 }
 
 .main {
@@ -17,16 +22,22 @@ body {
     background-color: lightgray;
     padding: 16px 24px;
     margin-bottom: 1rem;
-    height: 32px;
+    height: 64px;
     display: flex;
     align-items: center;
     justify-content: space-between;
 
-    .user-img {
-        height: 32px;
-        width: 32px;
-        border-radius: 100%;
-        border: 1px solid gray;
+    .user-details {
+        display: flex;
+        align-items: center;
+
+        .user-img {
+            height: 32px;
+            width: 32px;
+            border-radius: 100%;
+            border: 1px solid gray;
+            margin-right: 4px;
+        }
     }
 
     span {
@@ -60,15 +71,20 @@ body {
     justify-content: center;
     padding: 6px;
     margin: 0 8px;
+    cursor: pointer;
+
+    &:hover {
+        opacity: 0.8;
+    }
 }
 
-select.custom-select {
+select.custom-select,
+input {
     width: 200px;
     height: 32px;
-    font-family: Arial, Helvetica, sans-serif;
     font-size: 16px;
     border: 1px solid #ced4da;
-    border-radius: 2px;
+    border-radius: 4px;
     background-color: white;
     position: relative;
     vertical-align: middle;
@@ -82,12 +98,20 @@ button {
     flex-direction: row;
     align-content: center;
     justify-content: center;
-    border-color: transparent;
+    border: none;
     cursor: pointer;
+
+    &:not(:first-child) {
+        margin-left: 4px;
+    }
+
+    &:hover {
+        opacity: 0.8;
+    }
 
     &.button-standard {
         background-color: #ced4da;
-        color: darkslategray;
+        color: #333;
 
         span {
             line-height: 20px;
@@ -123,3 +147,69 @@ button {
         margin-bottom: 0;
     }
 }
+
+.day-container {
+    border-bottom: 1px solid #DDD;
+    padding-bottom: 1rem;
+
+    h2 {
+        display: flex;
+
+        img {
+            margin-left: 4px;
+            cursor: pointer;
+        }
+    }
+
+}
+
+// Dark Theme
+body {
+    background-color: #161d2e !important;
+    color: #eee !important;
+
+    .highlight-box {
+        background-color: #161d2e !important;
+        color: white !important;
+        border: 1px solid #717b94 !important;
+    }
+
+    .day-container {
+        h2 {
+            img {
+                background: #717b94;
+                border-radius: 50%;
+                padding: 4px;
+                height: 28px;
+                width: 28px;
+            }
+        }
+    }
+
+    select.custom-select,
+    input {
+        background-color: #555963 !important;
+        color: white !important;
+        border: none;
+    }
+
+    .toolbar {
+        background-color: #0a101f !important;
+    }
+
+    .icon-circle {
+        background-color: #717b94 !important;
+        color: black !important;
+    }
+
+    button:not(.activity-type) {
+        background-color: #a3a9bb !important;
+        color: black !important;
+        font-weight: bold !important;
+    }
+
+    button.activity-type {
+        background-color: #406E8E !important;
+    }
+}
+

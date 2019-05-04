@@ -1,6 +1,9 @@
 <div class="toolbar">
     <span>Baby Log</span>
-    <img *ngIf="auth.state | async as state" class="user-img" [src]="state.photoURL">
+    <div class="user-details">
+        <img *ngIf="auth.state | async as state" class="user-img" [src]="state.photoURL">
+        <button (click)="auth.logout()">Logout</button>
+    </div>
 </div>
 <ng-container *ngIf="(auth.state | async) as state; else: login">
 
@@ -11,7 +14,7 @@
             <span>Create New Day</span>
         </button>
 
-        <div *ngFor="let day of events; index as i">
+        <div *ngFor="let day of events; index as i" class="day-container">
             <h2>{{ day.value.date }}
                 <img (click)="userData.deleteEvent(day.key)" src="../assets/images/baseline-delete_forever-24px.svg" height="24px" width="24px">
             </h2>
@@ -74,10 +77,9 @@
     <div class="main">
         <div style="margin-top:250px;">User {{state.uid}}</div>
         <h3>Join Family:</h3>
-        <input #familyId type="text">
-        <button (click)="userData.join(state.uid, familyId.value)">Join</button>
-        <div>
-            <button (click)="auth.logout()">Logout</button>
+        <div class="flex">
+            <input #familyId type="text">
+            <button (click)="userData.join(state.uid, familyId.value)" class="button-standard">Join</button>
         </div>
     </div>
 
