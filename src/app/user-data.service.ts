@@ -139,8 +139,10 @@ export class UserData {
         this.saveEvent(eventKey, event);
     }
     deleteActivity(eventKey: string, event, activityIndex: number) {
-        event.activities.splice(activityIndex, 1);
-        this.saveEvent(eventKey, event);
+        if (confirm('Are you sure you want to save this thing into the database?')) {
+            event.activities.splice(activityIndex, 1);
+            this.saveEvent(eventKey, event);
+        }
     }
     updateTime(eventKey: number, event, activityIndex: number, newValue: string, domEvent: Event) {
         if (this.timerTimeout) {
