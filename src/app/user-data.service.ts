@@ -79,8 +79,13 @@ export class UserData {
                                 .map(a => {
                                     const data = a.payload.val() as Event;
                                     const key = a.payload.key;
-                                    return { key: key, value: data };
+                                    const value = { key: key, value: data };
+                                    if (!value.value.activities) {
+                                        value.value.activities = [];
+                                    }
+                                    return value;
                                 })
+
                                 .sort((a, b) =>
                                     a.value.date > b.value.date
                                         ? -1
