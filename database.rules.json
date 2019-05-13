@@ -9,7 +9,10 @@
     "families": {
       "$fid": {
         ".read": "root.child('users/'+auth.uid).val() == $fid",
-        ".write": "root.child('users/'+auth.uid).val() == $fid"
+        ".write": "root.child('users/'+auth.uid).val() == $fid",
+        "events": {
+            ".indexOn": "date"
+        }
       }
     }
   }
