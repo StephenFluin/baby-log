@@ -3,6 +3,7 @@ import { AngularFireDatabase, AngularFireList } from '@angular/fire/database';
 import { Auth } from './auth.service';
 import { switchMap, tap, map, shareReplay } from 'rxjs/operators';
 import { empty, Observable, BehaviorSubject } from 'rxjs';
+import { shareAndCache } from 'http-operators';
 
 export interface Data {
     events: Event[];
@@ -34,13 +35,15 @@ export class UserData {
     events: AngularFireList<Event>;
     eventSource = new BehaviorSubject<Observable<{ key: string; value: Event }[]>>(empty());
     eventList: Observable<{ key: string; value: Event }[]> = this.eventSource.pipe(
-        switchMap(inner => inner)
+        switchMap(inner => inner),
+        shareAndCache('events'),
     );
 
     types: AngularFireList<Type>;
     typeSource = new BehaviorSubject<Observable<{ key: string; value: Type }[]>>(empty());
     typeList: Observable<{ key: string; value: Type }[]> = this.typeSource.pipe(
-        switchMap(inner => inner)
+        switchMap(inner => inner),
+        shareAndCache('types'),
     );
 
     timerTimeout;

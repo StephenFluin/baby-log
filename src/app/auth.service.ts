@@ -3,6 +3,9 @@ import { Injectable } from '@angular/core';
 import { AngularFireAuth } from '@angular/fire/auth';
 import { auth } from 'firebase/app';
 import { map, shareReplay, tap, share, startWith } from 'rxjs/operators';
+
+import { shareAndCache } from 'http-operators';
+
 @Injectable({
     providedIn: 'root',
 })
@@ -19,7 +22,7 @@ export class Auth {
         tap(n => console.log('uid is', n)),
         shareReplay(1),
     );
-    state = this.afAuth.authState.pipe(shareReplay(1));
+    state = this.afAuth.authState.pipe(shareAndCache('authState'));
 
 
     latestUid = null;

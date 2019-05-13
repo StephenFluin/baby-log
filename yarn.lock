@@ -3270,6 +3270,11 @@ http-errors@1.6.3, http-errors@~1.6.2, http-errors@~1.6.3:
     setprototypeof "1.1.0"
     statuses ">= 1.4.0 < 2"
 
+http-operators@^0.0.3:
+  version "0.0.3"
+  resolved "https://registry.yarnpkg.com/http-operators/-/http-operators-0.0.3.tgz#af13ae44ffb08b94f301556b41e7e5199d3b061f"
+  integrity sha512-d9/vrdArzCYHwWCxgQ7vzXo3ArhF2uVPcAfiA18rk/0nmzakZTsggEuUOsgcGkANOrWJj2xCYtOIfqpweoYlgw==
+
 http-parser-js@>=0.4.0:
   version "0.5.0"
   resolved "https://registry.yarnpkg.com/http-parser-js/-/http-parser-js-0.5.0.tgz#d65edbede84349d0dc30320815a15d39cc3cbbd8"
