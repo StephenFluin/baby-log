@@ -2,6 +2,7 @@
   "name": "baby-log",
   "version": "0.0.0",
   "scripts": {
+    "postinstall": "ngcc --properties es2015 browser module main --first-only --create-ivy-entry-points",
     "serve": "ng serve"
   },
   "private": true,
