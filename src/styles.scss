@@ -78,12 +78,10 @@ body {
     }
 }
 
-select.custom-select,
-input {
-    width: 200px;
+td>div>select.custom-select,
+td>input {
     height: 32px;
     font-size: 16px;
-    border: 1px solid #ced4da;
     border-radius: 4px;
     background-color: white;
     position: relative;

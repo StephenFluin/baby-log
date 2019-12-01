@@ -36,17 +36,15 @@ export class UserData {
     eventSource = new BehaviorSubject<Observable<{ key: string; value: Event }[]>>(empty());
     eventList: Observable<{ key: string; value: Event }[]> = this.eventSource.pipe(
         switchMap(inner => inner),
-        shareAndCache('events'),
+        shareAndCache('events')
     );
 
     types: AngularFireList<Type>;
     typeSource = new BehaviorSubject<Observable<{ key: string; value: Type }[]>>(empty());
     typeList: Observable<{ key: string; value: Type }[]> = this.typeSource.pipe(
         switchMap(inner => inner),
-        shareAndCache('types'),
+        shareAndCache('types')
     );
-
-    timerTimeout;
 
     constructor(private auth: Auth, private db: AngularFireDatabase) {
         const familyIds = this.auth.uid.pipe(
@@ -147,20 +145,25 @@ export class UserData {
         this.saveEvent(eventKey, event);
     }
     deleteActivity(eventKey: string, event, activityIndex: number) {
-        if (confirm('Are you sure you want to save this thing into the database?')) {
+        if (confirm('Are you sure you want to delete this activity?')) {
             event.activities.splice(activityIndex, 1);
             this.saveEvent(eventKey, event);
         }
     }
-    updateTime(eventKey: number, event, activityIndex: number, newValue: string, domEvent: Event) {
-        if (this.timerTimeout) {
-            clearTimeout(this.timerTimeout);
-        }
-        this.timerTimeout = setTimeout(() => {
-            event.activities[activityIndex].time = newValue;
-            this.saveEvent(eventKey, event);
-            this.timerTimeout = null;
-        }, 3000);
+    updateTime(eventKey: number, event, activity, newValue: string, domEvent: Event) {
+        // Format the time as a date, and swap the last 11 chars of the original
+        const newTime = activity.time.substring(0,11) + localeIsoString(new Date(`2000-01-01 ${newValue}`)).substring(11);
+
+        // Sort the activities
+        activity.time = newTime.substring(0,16);
+        event.activities.sort((a,b) => {
+            if(a.time > b.time) {
+                return -1;
+            } else {
+                return 1;
+            }
+        });
+        this.saveEvent(eventKey, event);
     }
 
     join(uid, familyId) {
@@ -169,7 +172,7 @@ export class UserData {
     }
 }
 
-export function localeIsoString(date) {
+export function localeIsoString(date: Date) {
     const tzo = -date.getTimezoneOffset(),
         dif = tzo >= 0 ? '+' : '-',
         pad = function(num) {

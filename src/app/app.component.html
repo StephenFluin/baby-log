@@ -35,23 +35,27 @@
             <div class="activity-buttons">
                 <button class="activity-type" *ngFor="let type of userData.typeList | async" (click)="userData.addActivity(day.key, day.value, type.value.name ,'')">{{type.value.name}}</button>
             </div>
-            <table>
+            <table style="max-width:500px;">
                 <tr *ngFor="let activity of day.value.activities; index as activityIndex">
                     <td>
-                        <span contenteditable="true" (input)="
-                        userData.updateTime(
-                            day.key,
-                            day.value,
-                            activityIndex,
-                            activity.time.substring(0, 11) + $event.target.innerText,
-                            $event)">
-                            {{ activity.time.substring(11) }}
-                        </span>
+                        <input [ngxTimepicker]="picker"
+                            [value]="activity.time.substring(11)"
+                            readonly
+                            style="width:80px;text-align:center;"
+                        >
+                        <ngx-material-timepicker
+                            #picker
+                            [theme]="darkTheme"
+                            (timeSet)="userData.updateTime(
+                                day.key,
+                                day.value,
+                                day.value.activities[activityIndex],
+                                $event)"></ngx-material-timepicker>
                     </td>
                     <td>{{ activity.activity }}</td>
-                    <td>
+                    <td style="width:100%">
                         <div *ngIf="userData.typeList | async | typeMap as types">
-                            <select class="custom-select" *ngIf="types[activity.activity] && types[activity.activity].length; else raw"
+                            <select style="width:100%" class="custom-select" *ngIf="types[activity.activity] && types[activity.activity].length; else raw"
                                 (input)="activity.activityDetails = $event.target.value;userData.saveEvent(day.key, day.value)">
                                 <option *ngFor="let option of types[activity.activity]" [selected]="option === activity.activityDetails">
                                     {{option}}

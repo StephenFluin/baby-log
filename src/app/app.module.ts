@@ -1,5 +1,6 @@
 import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { AppComponent } from './app.component';
 import { AngularFireModule } from '@angular/fire';
@@ -8,6 +9,7 @@ import { AngularFireDatabaseModule } from '@angular/fire/database';
 import { SummarizeEventPipe } from './summarize-event.pipe';
 import { ManageTypes } from './manage-types';
 import { TypeMapPipe } from './type-map.pipe';
+import { NgxMaterialTimepickerModule } from 'ngx-material-timepicker';
 
 @NgModule({
     declarations: [AppComponent, SummarizeEventPipe, ManageTypes, TypeMapPipe],
@@ -23,6 +25,8 @@ import { TypeMapPipe } from './type-map.pipe';
         }),
         AngularFireAuthModule,
         AngularFireDatabaseModule,
+        NgxMaterialTimepickerModule,
+        BrowserAnimationsModule,
     ],
     providers: [],
     bootstrap: [AppComponent],
