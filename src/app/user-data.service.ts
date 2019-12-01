@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { AngularFireDatabase, AngularFireList } from '@angular/fire/database';
 import { Auth } from './auth.service';
 import { switchMap, tap, map, shareReplay } from 'rxjs/operators';
-import { empty, Observable, BehaviorSubject } from 'rxjs';
+import { empty, Observable, BehaviorSubject, EMPTY } from 'rxjs';
 import { shareAndCache } from 'http-operators';
 
 export interface Data {
@@ -28,19 +28,26 @@ export interface Type {
 })
 export class UserData {
     familyId: string;
+
+    status: 'waiting'|'ready' = 'waiting';
     /**
      * Synchronous local copy of data that we can modify
      */
     data: Data;
+    /** Modifiable version of the AngularFire list */
     events: AngularFireList<Event>;
-    eventSource = new BehaviorSubject<Observable<{ key: string; value: Event }[]>>(empty());
+    /** Temporary storage for events source, (basically which family the events are stored in)  */
+    eventSource = new BehaviorSubject<Observable<{ key: string; value: Event }[]>>(EMPTY);
     eventList: Observable<{ key: string; value: Event }[]> = this.eventSource.pipe(
         switchMap(inner => inner),
+        tap(() => this.status = 'ready'),
         shareAndCache('events')
     );
 
+    /** Modifiable version of the AngularFire list */
     types: AngularFireList<Type>;
-    typeSource = new BehaviorSubject<Observable<{ key: string; value: Type }[]>>(empty());
+    /** Temporary storage for type source, (basically which family the events are stored in) */
+    typeSource = new BehaviorSubject<Observable<{ key: string; value: Type }[]>>(EMPTY);
     typeList: Observable<{ key: string; value: Type }[]> = this.typeSource.pipe(
         switchMap(inner => inner),
         shareAndCache('types')
@@ -49,67 +56,75 @@ export class UserData {
     constructor(private auth: Auth, private db: AngularFireDatabase) {
         const familyIds = this.auth.uid.pipe(
             tap(uid => console.log('data got a new uid', uid)),
+            // We need this so logout triggers emptying of data
             switchMap(uid => {
                 if (!uid) {
-                    return empty();
+                    return EMPTY;
                 }
                 return this.db.object<string>(`users/${uid}`).valueChanges();
             }),
-            tap(familyId => {
-                console.log('data got a new fid', familyId);
-                if (!familyId) {
-                    familyId = this.db
-                        .list(`families`)
-                        .push({ creationDate: localeIsoString(new Date()) }).key;
-                    this.db.object(`users/${this.auth.latestUid}`).set(familyId);
-                }
-                this.familyId = familyId;
-                console.log('family ID is ', familyId);
-                this.events = this.db.list(`families/${familyId}/events`, ref =>
-                    ref.orderByChild('date').limitToLast(3)
-                );
-                this.types = this.db.list(`families/${familyId}/types`);
-
-                this.eventSource.next(
-                    this.events.snapshotChanges().pipe(
-                        map(actions =>
-                            actions
-                                .map(a => {
-                                    const data = a.payload.val() as Event;
-                                    const key = a.payload.key;
-                                    const value = { key: key, value: data };
-                                    if (!value.value.activities) {
-                                        value.value.activities = [];
-                                    }
-                                    return value;
-                                })
-
-                                .sort((a, b) =>
-                                    a.value.date > b.value.date
-                                        ? -1
-                                        : a.value.date === b.value.date &&
-                                          a.value.activities.length > b.value.activities.length
-                                        ? -1
-                                        : 1
-                                )
-                        )
-                    )
-                );
-                this.typeSource.next(
-                    this.types.snapshotChanges().pipe(
-                        map(actions =>
-                            actions.map(a => {
-                                return { key: a.payload.key, value: a.payload.val() };
-                            })
-                        ),
-                        shareReplay(1)
-                    )
-                );
-            })
+            tap(familyId => this.newFamilyId(familyId)),
         );
         familyIds.subscribe(next => {
             // One global subscription just to make the above work and populate our events
         });
+    }
+    newFamilyId(familyId: string) {
+        {
+            // If user doesn't have a family, let's give them one!
+            if (!familyId) {
+                familyId = this.db
+                    .list(`families`)
+                    .push({ creationDate: localeIsoString(new Date()) }).key;
+                this.db.object(`users/${this.auth.latestUid}`).set(familyId);
+            }
+
+            this.familyId = familyId;
+            console.log('family ID is ', familyId);
+
+            // Save firebase objects so we can add/remove from lists
+            this.events = this.db.list(`families/${familyId}/events`, ref =>
+                ref.orderByChild('date').limitToLast(3)
+            );
+            this.types = this.db.list(`families/${familyId}/types`);
+
+            // Save a new event source based on the current family
+            this.eventSource.next(
+                this.events.snapshotChanges().pipe(
+                    map(actions =>
+                        actions
+                            .map(a => {
+                                const data = a.payload.val() as Event;
+                                const key = a.payload.key;
+                                const value = { key: key, value: data };
+                                if (!value.value.activities) {
+                                    value.value.activities = [];
+                                }
+                                return value;
+                            })
+                            // Sort date ascending, bigger days break ties
+                            .sort((a, b) =>
+                                a.value.date > b.value.date
+                                    ? -1
+                                    : a.value.date === b.value.date &&
+                                      a.value.activities.length > b.value.activities.length
+                                    ? -1
+                                    : 1
+                            )
+                    )
+                )
+            );
+            this.typeSource.next(
+                this.types.snapshotChanges().pipe(
+                    map(actions =>
+                        actions.map(a => {
+                            return { key: a.payload.key, value: a.payload.val() };
+                        })
+                    ),
+                    shareReplay(1)
+                )
+            );
+        }
     }
 
     saveEvent(key, data) {

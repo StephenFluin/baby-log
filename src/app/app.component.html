@@ -5,6 +5,9 @@
         <button (click)="auth.logout()">Logout</button>
     </div>
 </div>
+<div style="height:5px;">
+<progress *ngIf=" userData.status !== 'ready'" ></progress>
+</div>
 <ng-container *ngIf="(auth.state | async) as state; else: login">
 
 
