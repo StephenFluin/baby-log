@@ -1,5 +1,14 @@
 {
   "projects": {
     "default": "baby-log-7307f"
+  },
+  "targets": {
+    "baby-log-7307f": {
+      "hosting": {
+        "baby-log": [
+          "baby-log-7307f"
+        ]
+      }
+    }
   }
 }
