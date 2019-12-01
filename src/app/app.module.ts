@@ -10,6 +10,8 @@ import { SummarizeEventPipe } from './summarize-event.pipe';
 import { ManageTypes } from './manage-types';
 import { TypeMapPipe } from './type-map.pipe';
 import { NgxMaterialTimepickerModule } from 'ngx-material-timepicker';
+import { NgxChartsModule } from '@swimlane/ngx-charts';
+
 
 @NgModule({
     declarations: [AppComponent, SummarizeEventPipe, ManageTypes, TypeMapPipe],
@@ -27,6 +29,7 @@ import { NgxMaterialTimepickerModule } from 'ngx-material-timepicker';
         AngularFireDatabaseModule,
         NgxMaterialTimepickerModule,
         BrowserAnimationsModule,
+        NgxChartsModule,
     ],
     providers: [],
     bootstrap: [AppComponent],

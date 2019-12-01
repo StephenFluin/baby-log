@@ -23,15 +23,10 @@
             </h2>
 
             <div class="highlight-box">
-                <span>Summary</span>
-                <br>
+                <!-- <ngx-charts-pie-chart [legend]="true" [results]="(day.value | summarizeEvent)['sleepChart']"></ngx-charts-pie-chart> -->
                 <p>
-                    <span>Max Times</span><br>
-                    <span>{{(day.value | summarizeEvent)['maxTimes'] | json}}</span>
-                </p>
-                <p>
-                    <span>Total Times</span><br>
-                    <span>{{(day.value | summarizeEvent)['totalTimes'] | json}}</span>
+                    <span>Slept {{(day.value | summarizeEvent)['totalPretty']['asleep']}}</span><br>
+                    <span></span>
                 </p>
             </div>
 

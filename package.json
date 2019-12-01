@@ -15,6 +15,7 @@
     "@angular/platform-browser": "~9.0.0-rc.4",
     "@angular/platform-browser-dynamic": "~9.0.0-rc.4",
     "@angular/router": "~9.0.0-rc.4",
+    "@swimlane/ngx-charts": "11.0.1",
     "core-js": "^2.5.4",
     "firebase": "^6.6.2",
     "http-operators": "^0.0.3",
