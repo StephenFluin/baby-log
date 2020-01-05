@@ -20,7 +20,7 @@ export interface Event {
 }
 export interface Type {
     name: string;
-    details: string[];
+    details?: string[];
 }
 
 @Injectable({

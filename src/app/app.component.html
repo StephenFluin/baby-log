@@ -1,8 +1,8 @@
 <div class="toolbar">
-    <span>Baby Log</span>
+    <span i18n>Baby Log</span>
     <div class="user-details">
         <img *ngIf="auth.state | async as state" class="user-img" [src]="state.photoURL">
-        <button (click)="auth.logout()">Logout</button>
+        <button (click)="auth.logout()" i18n>Logout</button>
     </div>
 </div>
 <div style="height:5px;">
@@ -14,7 +14,7 @@
     <div *ngIf="userData.eventList | async as events" class="main">
         <button class="button-standard button-icon-combo button-important" (click)="userData.createEvent()">
             <img src="../assets/images/baseline-add-24px.svg" height="20px" width="20px">
-            <span>Create New Day</span>
+            <span i18n>Create New Day</span>
         </button>
 
         <div *ngFor="let day of events; index as i" class="day-container">
@@ -25,7 +25,7 @@
             <div class="highlight-box">
                 <!-- <ngx-charts-pie-chart [legend]="true" [results]="(day.value | summarizeEvent)['sleepChart']"></ngx-charts-pie-chart> -->
                 <p>
-                    <span>Slept {{(day.value | summarizeEvent)['totalPretty']['asleep']}}</span><br>
+                    <span i18n>Slept {{(day.value | summarizeEvent)['totalPretty']['asleep']}}</span><br>
                     <span></span>
                 </p>
             </div>
@@ -78,7 +78,7 @@
 
     <div class="main">
         <div style="margin-top:250px;">User {{state.uid}}</div>
-        <h3>Join Family:</h3>
+        <h3 i18n>Join Family:</h3>
         <div class="flex">
             <input #familyId type="text">
             <button (click)="userData.join(state.uid, familyId.value)" class="button-standard">Join</button>
@@ -90,7 +90,7 @@
 
 <ng-template #login>
     <div class="main">
-        <h1>Login to use the baby log</h1>
+        <h1 i18n>Login to use the baby log</h1>
         <button (click)="auth.login()">Login</button>
     </div>
 </ng-template>

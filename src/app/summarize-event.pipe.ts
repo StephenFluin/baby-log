@@ -15,7 +15,6 @@ export class SummarizeEventPipe implements PipeTransform {
         const maxTimes = {},
             totalTimes = {},
             totalPretty = {};
-        console.log(event.activities);
         const sleepChart = [
             ...new Set(
                 event.activities

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE messagebundle [
+<!ELEMENT messagebundle (msg)*>
+<!ATTLIST messagebundle class CDATA #IMPLIED>
+
+<!ELEMENT msg (#PCDATA|ph|source)*>
+<!ATTLIST msg id CDATA #IMPLIED>
+<!ATTLIST msg seq CDATA #IMPLIED>
+<!ATTLIST msg name CDATA #IMPLIED>
+<!ATTLIST msg desc CDATA #IMPLIED>
+<!ATTLIST msg meaning CDATA #IMPLIED>
+<!ATTLIST msg obsolete (obsolete) #IMPLIED>
+<!ATTLIST msg xml:space (default|preserve) "default">
+<!ATTLIST msg is_hidden CDATA #IMPLIED>
+
+<!ELEMENT source (#PCDATA)>
+
+<!ELEMENT ph (#PCDATA|ex)*>
+<!ATTLIST ph name CDATA #REQUIRED>
+
+<!ELEMENT ex (#PCDATA)>
+]>
+<messagebundle>
+  <msg id="7085959856087194916"><source>app/app.component.html:2</source>Baby Log</msg>
+  <msg id="3797778920049399855"><source>app/app.component.html:5</source>Logout</msg>
+  <msg id="7521058130898777535"><source>app/app.component.html:17</source>Create New Day</msg>
+  <msg id="7555518695467766222"><source>app/app.component.html:28</source>Slept <ph name="INTERPOLATION"><ex>{{(day.value | summarizeEvent)[&apos;totalPretty&apos;][&apos;asleep&apos;]}}</ex>{{(day.value | summarizeEvent)[&apos;totalPretty&apos;][&apos;asleep&apos;]}}</ph></msg>
+  <msg id="9072935902730301906"><source>app/app.component.html:81</source>Join Family:</msg>
+  <msg id="7142610756301790720"><source>app/app.component.html:93</source>Login to use the baby log</msg>
+</messagebundle>

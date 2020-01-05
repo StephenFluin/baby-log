@@ -1,0 +1,55 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" version="1.2">
+  <file source-language="en-US" datatype="plaintext" original="ng2.template" target-language="fr">
+    <body>
+      <trans-unit id="3bfc4f0b637b5b4fb5e8731d40aeedc20974590f" datatype="html" approved="yes">
+        <source>Baby Log</source>
+        <target state="translated">Journal de Bébé</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">app/app.component.html</context>
+          <context context-type="linenumber">2</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="bb694b49d408265c91c62799c2b3a7e3151c824d" datatype="html" approved="yes">
+        <source>Logout</source>
+        <target state="translated">Déconnexion</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">app/app.component.html</context>
+          <context context-type="linenumber">5</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="563535166c2a4a31e3306945acd95dbe0bdb049c" datatype="html" approved="yes">
+        <source>Create New Day</source>
+        <target state="translated">Créer un Nouveau Jour</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">app/app.component.html</context>
+          <context context-type="linenumber">17</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="38e38e5ff30948a61fe2e96834905b90e3ab9e01" datatype="html" approved="yes">
+        <source>Slept <x id="INTERPOLATION" equiv-text="{{(day.value | summarizeEvent)['totalPretty']['asleep']}}"/></source>
+        <target state="translated">Dormi <x id="INTERPOLATION"/></target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">app/app.component.html</context>
+          <context context-type="linenumber">28</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="a5b68beb8a2a15ac2d4413d4b2f750d3524df2d0" datatype="html" approved="yes">
+        <source>Join Family:</source>
+        <target state="translated">Joindre un famille:</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">app/app.component.html</context>
+          <context context-type="linenumber">81</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="d80d067106dcd1ad4365447fe4f2a70d0cb01553" datatype="html" approved="yes">
+        <source>Login to use the baby log</source>
+        <target state="translated">Connectez-vous pour utiliser le journal de bébé</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">app/app.component.html</context>
+          <context context-type="linenumber">93</context>
+        </context-group>
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

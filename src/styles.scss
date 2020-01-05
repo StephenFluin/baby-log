@@ -75,8 +75,7 @@ progress {
 
 .icon-circle {
     border-radius: 100%;
-    background-color: #eee;
-    display: flex;
+    display: inline-flex;
     align-content: center;
     justify-content: center;
     padding: 6px;
@@ -86,6 +85,10 @@ progress {
     &:hover {
         opacity: 0.8;
     }
+}
+.icon-circle svg {
+    width:24px;
+    height:24px;
 }
 
 td>div>select.custom-select,
