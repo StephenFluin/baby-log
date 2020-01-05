@@ -13,6 +13,7 @@ export interface Event {
     activities: {
         activity: string;
         activityDetails: string;
+        notes?: string;
         person?: string;
         time: string;
     }[];
@@ -127,7 +128,7 @@ export class UserData {
         }
     }
 
-    saveEvent(key, data) {
+    saveEvent(key: string, data: Event) {
         this.db.object(`families/${this.familyId}/events/${key}`).update(data);
     }
 
@@ -167,7 +168,7 @@ export class UserData {
         }
     }
 
-    updateTime(eventKey: number, event: Event, activity, newValue: string, domEvent: Event) {
+    updateTime(eventKey: string, event: Event, activity, newValue: string, domEvent: Event) {
         // Format the time as a date, and swap the last 11 chars of the original
         const newTime =
             activity.time.substring(0, 11) +
@@ -175,7 +176,7 @@ export class UserData {
         activity.time = newTime.substring(0, 16);
         this.updateEvent(eventKey, event);
     }
-    updateDate(eventKey: number, event: Event, activity, change: number) {
+    updateDate(eventKey: string, event: Event, activity, change: number) {
         console.log(activity, change);
         activity.time = localeIsoString(
             new Date(new Date(activity.time).valueOf() + change * 24 * 60 * 60 * 1000)
@@ -186,7 +187,7 @@ export class UserData {
     /**
      * Update an event after sorting activities
      */
-    updateEvent(eventKey: number, event) {
+    updateEvent(eventKey: string, event) {
         // Sort the activities
         event.activities.sort((a, b) => {
             if (a.time > b.time) {

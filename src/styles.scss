@@ -86,9 +86,9 @@ progress {
         opacity: 0.8;
     }
 }
-.icon-circle svg {
-    width:24px;
-    height:24px;
+.icon-circle img {
+    width:20px;
+    height:20px;
 }
 
 td>div>select.custom-select,
@@ -211,6 +211,7 @@ body {
     .icon-circle {
         background-color: #717b94 !important;
         color: black !important;
+
     }
 
     button:not(.activity-type) {

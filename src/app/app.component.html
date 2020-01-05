@@ -34,7 +34,8 @@
                 <button class="activity-type" *ngFor="let type of userData.typeList | async" (click)="userData.addActivity(day.key, day.value, type.value.name ,'')">{{type.value.name}}</button>
             </div>
             <table style="max-width:500px;">
-                <tr *ngFor="let activity of day.value.activities; index as activityIndex">
+                <ng-container *ngFor="let activity of day.value.activities; index as activityIndex">
+                    <tr>
                     <td>
                         <input [ngxTimepicker]="picker"
                             [value]="activity.time.substring(11)"
@@ -73,12 +74,17 @@
                         </div>
                         <ng-template #raw>{{activity.activityDetails}}</ng-template>
                     </td>
+                    <td><div class="icon-circle" (click)="note(day, activityIndex)">
+                        <img src="../assets/images/edit.svg" alt="edit">
+                    </div></td>
                     <td>
                         <div class="icon-circle" (click)="userData.deleteActivity(day.key, day.value, i, activityIndex)">
-                            <img src="../assets/images/baseline-delete_forever-24px.svg" height="20px" width="20px">
+                            <img src="../assets/images/baseline-delete_forever-24px.svg" alt="delete">
                         </div>
                     </td>
                 </tr>
+                <tr *ngIf="activity.notes"><td colspan="5">{{activity.notes}}</td></tr>
+                </ng-container>
             </table>
         </div>
 
