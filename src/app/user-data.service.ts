@@ -29,7 +29,7 @@ export interface Type {
 export class UserData {
     familyId: string;
 
-    status: 'waiting'|'ready' = 'waiting';
+    status: 'waiting' | 'ready' = 'waiting';
     /**
      * Synchronous local copy of data that we can modify
      */
@@ -40,7 +40,7 @@ export class UserData {
     eventSource = new BehaviorSubject<Observable<{ key: string; value: Event }[]>>(EMPTY);
     eventList: Observable<{ key: string; value: Event }[]> = this.eventSource.pipe(
         switchMap(inner => inner),
-        tap(() => this.status = 'ready'),
+        tap(() => (this.status = 'ready')),
         shareAndCache('events')
     );
 
@@ -63,7 +63,7 @@ export class UserData {
                 }
                 return this.db.object<string>(`users/${uid}`).valueChanges();
             }),
-            tap(familyId => this.newFamilyId(familyId)),
+            tap(familyId => this.newFamilyId(familyId))
         );
         familyIds.subscribe(next => {
             // One global subscription just to make the above work and populate our events
@@ -165,14 +165,30 @@ export class UserData {
             this.saveEvent(eventKey, event);
         }
     }
-    updateTime(eventKey: number, event, activity, newValue: string, domEvent: Event) {
-        // Format the time as a date, and swap the last 11 chars of the original
-        const newTime = activity.time.substring(0,11) + localeIsoString(new Date(`2000-01-01 ${newValue}`)).substring(11);
 
+    updateTime(eventKey: number, event: Event, activity, newValue: string, domEvent: Event) {
+        // Format the time as a date, and swap the last 11 chars of the original
+        const newTime =
+            activity.time.substring(0, 11) +
+            localeIsoString(new Date(`2000-01-01 ${newValue}`)).substring(11);
+        activity.time = newTime.substring(0, 16);
+        this.updateEvent(eventKey, event);
+    }
+    updateDate(eventKey: number, event: Event, activity, change: number) {
+        console.log(activity, change);
+        activity.time = localeIsoString(
+            new Date(new Date(activity.time).valueOf() + change * 24 * 60 * 60 * 1000)
+        ).substring(0, 16);
+        this.updateEvent(eventKey, event);
+    }
+
+    /**
+     * Update an event after sorting activities
+     */
+    updateEvent(eventKey: number, event) {
         // Sort the activities
-        activity.time = newTime.substring(0,16);
-        event.activities.sort((a,b) => {
-            if(a.time > b.time) {
+        event.activities.sort((a, b) => {
+            if (a.time > b.time) {
                 return -1;
             } else {
                 return 1;
@@ -186,7 +202,9 @@ export class UserData {
         window.location.reload();
     }
 }
-
+/**
+ * Returns a string that looks like 2020-01-02T17:53-08:00
+ */
 export function localeIsoString(date: Date) {
     const tzo = -date.getTimezoneOffset(),
         dif = tzo >= 0 ? '+' : '-',

@@ -7523,10 +7523,10 @@ next-tick@1, next-tick@~1.0.0:
   resolved "https://registry.yarnpkg.com/next-tick/-/next-tick-1.0.0.tgz#ca86d1fe8828169b0120208e3dc8424b9db8342c"
   integrity sha1-yobR/ogoFpsBICCOPchCS524NCw=
 
-ngx-material-timepicker@^5.2.3:
-  version "5.2.3"
-  resolved "https://registry.yarnpkg.com/ngx-material-timepicker/-/ngx-material-timepicker-5.2.3.tgz#48f12f7f7ac3eef0edd5976be76f37ca147a6fd9"
-  integrity sha512-3HzHq/UXJQF0cOvissCOxlM+Dzfza/5ouI088GOR77HK0XPzSZluVdamIsz9g+mxVu7LBNh59XNMUNC/6wsUYw==
+ngx-material-timepicker@^5.3.0:
+  version "5.3.0"
+  resolved "https://registry.yarnpkg.com/ngx-material-timepicker/-/ngx-material-timepicker-5.3.0.tgz#cde2b74d2c38c9c022b0f02f1754d1338d524321"
+  integrity sha512-6DJ0/bf/Rtv+iflsjy5hr7P/CKcwh7DjDO3wmmAxzjCsVY2HjzcGjDb7L4kb0++ubFEXW0xIGXtQ2NjIVbl+9A==
   dependencies:
     "@types/luxon" "^1.11.1"
     luxon "^1.11.3"

@@ -43,12 +43,22 @@
                         >
                         <ngx-material-timepicker
                             #picker
+                            [editableHintTmpl]="dialHint"
+                            [enableKeyboardInput]="true"
                             [theme]="darkTheme"
                             (timeSet)="userData.updateTime(
                                 day.key,
                                 day.value,
                                 day.value.activities[activityIndex],
-                                $event)"></ngx-material-timepicker>
+                                $event)"
+                            ></ngx-material-timepicker>
+                        <ng-template #dialHint>
+                            <p>
+                                <button (click)="userData.updateDate(day.key,day.value,day.value.activities[activityIndex], -1);picker.close();">&lt;&lt;</button>
+                                {{activity.time.substring(0,10)}}
+                                <button (click)="userData.updateDate(day.key,day.value,day.value.activities[activityIndex], 1);picker.close();">&gt;&gt;</button>
+                            </p>
+                        </ng-template>
                     </td>
                     <td>{{ activity.activity }}</td>
                     <td style="width:100%">
