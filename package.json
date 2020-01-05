@@ -2,7 +2,8 @@
   "name": "baby-log",
   "version": "0.0.0",
   "scripts": {
-    "serve": "ng serve"
+    "serve": "ng serve",
+    "deploy": "ng deploy"
   },
   "private": true,
   "dependencies": {

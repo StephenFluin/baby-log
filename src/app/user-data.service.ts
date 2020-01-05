@@ -159,8 +159,9 @@ export class UserData {
         });
         this.saveEvent(eventKey, event);
     }
-    deleteActivity(eventKey: string, event, activityIndex: number) {
-        if (confirm('Are you sure you want to delete this activity?')) {
+    deleteActivity(eventKey: string, event: Event, eventIndex, activityIndex: number) {
+
+        if (confirm(`Are you sure you want to delete this '${event.activities[activityIndex].activity}' entry?`)) {
             event.activities.splice(activityIndex, 1);
             this.saveEvent(eventKey, event);
         }

@@ -59,7 +59,7 @@
                   "maximumWarning": "6kb"
                 }
               ],
-              "localize": true
+              "localize": false
             }
           }
         },
