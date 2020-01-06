@@ -85,7 +85,7 @@ export class UserData {
 
             // Save firebase objects so we can add/remove from lists
             this.events = this.db.list(`families/${familyId}/events`, ref =>
-                ref.orderByChild('date').limitToLast(3)
+                ref.orderByChild('date').limitToLast(5)
             );
             this.types = this.db.list(`families/${familyId}/types`);
 
