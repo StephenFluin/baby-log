@@ -45,7 +45,7 @@
                         <ngx-material-timepicker
                             #picker
                             [editableHintTmpl]="dialHint"
-                            [enableKeyboardInput]="false"
+                            [enableKeyboardInput]="editableDateMode"
                             [theme]="darkTheme"
                             (timeSet)="userData.updateTime(
                                 day.key,
@@ -94,7 +94,11 @@
 
     <div class="main">
         <div style="margin-top:250px;">User {{state.uid}}</div>
-        <h3 i18n>Join Family:</h3>
+        <h3 i18n>Settings</h3>
+        <h4></h4>
+        <label><input type="checkbox" (change)="editableDateMode = $event.target.checked"> Enable Date Editing</label>
+        {{editableDateMode}}
+        <h4>Join Family</h4>
         <div class="flex">
             <input #familyId type="text">
             <button (click)="userData.join(state.uid, familyId.value)" class="button-standard">Join</button>

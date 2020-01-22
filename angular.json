@@ -29,7 +29,8 @@
             "styles": [
               "src/styles.scss"
             ],
-            "scripts": []
+            "scripts": [],
+            "aot": true
           },
           "configurations": {
             "production": {
@@ -60,6 +61,7 @@
                 }
               ],
               "localize": false
+
             }
           }
         },
@@ -115,10 +117,10 @@
         }
       },
       "i18n": {
-          "sourceLocale": "en-US",
-          "locales": {
-              "fr": "src/messages.fr.xlf"
-          }
+        "sourceLocale": "en-US",
+        "locales": {
+          "fr": "src/messages.fr.xlf"
+        }
       }
     },
     "baby-log-e2e": {
@@ -150,5 +152,8 @@
       }
     }
   },
-  "defaultProject": "baby-log"
+  "defaultProject": "baby-log",
+  "cli": {
+    "analytics": "a3530465-b86e-4a5a-9390-a0ddb7e19031"
+  }
 }

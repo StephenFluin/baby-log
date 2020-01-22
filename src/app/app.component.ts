@@ -25,6 +25,8 @@ export class AppComponent {
         }
     };
 
+    editableDateMode = false;
+
     constructor(public auth: Auth, public userData: UserData) {}
 
 
