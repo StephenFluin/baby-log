@@ -5,6 +5,8 @@ import { switchMap, tap, map, shareReplay } from 'rxjs/operators';
 import { empty, Observable, BehaviorSubject, EMPTY } from 'rxjs';
 import { shareAndCache } from 'http-operators';
 
+import { parse, parseISO, formatISO } from 'date-fns';
+
 export interface Data {
     events: Event[];
 }
@@ -40,7 +42,7 @@ export class UserData {
     /** Temporary storage for events source, (basically which family the events are stored in)  */
     eventSource = new BehaviorSubject<Observable<{ key: string; value: Event }[]>>(EMPTY);
     eventList: Observable<{ key: string; value: Event }[]> = this.eventSource.pipe(
-        switchMap(inner => inner),
+        switchMap((inner) => inner),
         tap(() => (this.status = 'ready')),
         shareAndCache('events')
     );
@@ -50,23 +52,23 @@ export class UserData {
     /** Temporary storage for type source, (basically which family the events are stored in) */
     typeSource = new BehaviorSubject<Observable<{ key: string; value: Type }[]>>(EMPTY);
     typeList: Observable<{ key: string; value: Type }[]> = this.typeSource.pipe(
-        switchMap(inner => inner),
+        switchMap((inner) => inner),
         shareAndCache('types')
     );
 
     constructor(private auth: Auth, private db: AngularFireDatabase) {
         const familyIds = this.auth.uid.pipe(
-            tap(uid => console.log('data got a new uid', uid)),
+            tap((uid) => console.log('data got a new uid', uid)),
             // We need this so logout triggers emptying of data
-            switchMap(uid => {
+            switchMap((uid) => {
                 if (!uid) {
                     return EMPTY;
                 }
                 return this.db.object<string>(`users/${uid}`).valueChanges();
             }),
-            tap(familyId => this.newFamilyId(familyId))
+            tap((familyId) => this.newFamilyId(familyId))
         );
-        familyIds.subscribe(next => {
+        familyIds.subscribe((next) => {
             // One global subscription just to make the above work and populate our events
         });
     }
@@ -84,7 +86,7 @@ export class UserData {
             console.log('family ID is ', familyId);
 
             // Save firebase objects so we can add/remove from lists
-            this.events = this.db.list(`families/${familyId}/events`, ref =>
+            this.events = this.db.list(`families/${familyId}/events`, (ref) =>
                 ref.orderByChild('date').limitToLast(5)
             );
             this.types = this.db.list(`families/${familyId}/types`);
@@ -92,9 +94,9 @@ export class UserData {
             // Save a new event source based on the current family
             this.eventSource.next(
                 this.events.snapshotChanges().pipe(
-                    map(actions =>
+                    map((actions) =>
                         actions
-                            .map(a => {
+                            .map((a) => {
                                 const data = a.payload.val() as Event;
                                 const key = a.payload.key;
                                 const value = { key: key, value: data };
@@ -117,8 +119,8 @@ export class UserData {
             );
             this.typeSource.next(
                 this.types.snapshotChanges().pipe(
-                    map(actions =>
-                        actions.map(a => {
+                    map((actions) =>
+                        actions.map((a) => {
                             return { key: a.payload.key, value: a.payload.val() };
                         })
                     ),
@@ -161,8 +163,11 @@ export class UserData {
         this.saveEvent(eventKey, event);
     }
     deleteActivity(eventKey: string, event: Event, eventIndex, activityIndex: number) {
-
-        if (confirm(`Are you sure you want to delete this '${event.activities[activityIndex].activity}' entry?`)) {
+        if (
+            confirm(
+                `Are you sure you want to delete this '${event.activities[activityIndex].activity}' entry?`
+            )
+        ) {
             event.activities.splice(activityIndex, 1);
             this.saveEvent(eventKey, event);
         }
@@ -170,10 +175,11 @@ export class UserData {
 
     updateTime(eventKey: string, event: Event, activity, newValue: string, domEvent: Event) {
         // Format the time as a date, and swap the last 11 chars of the original
-        const newTime =
-            activity.time.substring(0, 11) +
-            localeIsoString(new Date(`2000-01-01 ${newValue}`)).substring(11);
-        activity.time = newTime.substring(0, 16);
+        let nt = parse(newValue, 'h:mm a', parseISO(activity.time));
+        // console.log('new datetime is ', nt);
+        activity.time =
+            localeIsoString(nt).substring(0,16);
+        // console.log('setting activity time to the first 16 chars of this', activity.time);
         this.updateEvent(eventKey, event);
     }
     updateDate(eventKey: string, event: Event, activity, change: number) {
@@ -196,6 +202,7 @@ export class UserData {
                 return 1;
             }
         });
+        // console.log('saving event',event,eventKey);
         this.saveEvent(eventKey, event);
     }
 
@@ -208,27 +215,5 @@ export class UserData {
  * Returns a string that looks like 2020-01-02T17:53-08:00
  */
 export function localeIsoString(date: Date) {
-    const tzo = -date.getTimezoneOffset(),
-        dif = tzo >= 0 ? '+' : '-',
-        pad = function(num) {
-            const norm = Math.floor(Math.abs(num));
-            return (norm < 10 ? '0' : '') + norm;
-        };
-    return (
-        date.getFullYear() +
-        '-' +
-        pad(date.getMonth() + 1) +
-        '-' +
-        pad(date.getDate()) +
-        'T' +
-        pad(date.getHours()) +
-        ':' +
-        pad(date.getMinutes()) +
-        ':' +
-        pad(date.getSeconds()) +
-        dif +
-        pad(tzo / 60) +
-        ':' +
-        pad(tzo % 60)
-    );
+    return formatISO(date, { representation: 'complete' });
 }
