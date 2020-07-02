@@ -30,13 +30,13 @@ export class Auth {
         this.uid.subscribe(next => (this.latestUid = next));
     }
     login() {
-        this.afAuth.auth.signInWithPopup(new firebase.auth.GoogleAuthProvider())
+        this.afAuth.signInWithPopup(new firebase.auth.GoogleAuthProvider())
         .then(credential => {
             localStorage['savedCreds'] = credential.user.uid;
         });
     }
     logout() {
-        this.afAuth.auth.signOut();
+        this.afAuth.signOut();
         localStorage.removeItem('savedCreds');
     }
 }
