@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 
 import { AngularFireAuth } from '@angular/fire/auth';
-import { auth } from 'firebase/app';
+import * as firebase from 'firebase/app';
 import { map, shareReplay, tap, share, startWith } from 'rxjs/operators';
 
 import { shareAndCache } from 'http-operators';
@@ -30,7 +30,7 @@ export class Auth {
         this.uid.subscribe(next => (this.latestUid = next));
     }
     login() {
-        this.afAuth.auth.signInWithPopup(new auth.GoogleAuthProvider())
+        this.afAuth.auth.signInWithPopup(new firebase.auth.GoogleAuthProvider())
         .then(credential => {
             localStorage['savedCreds'] = credential.user.uid;
         });
