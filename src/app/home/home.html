@@ -2,7 +2,7 @@
     <div *ngIf="userData.eventList | async as events" class="main">
         <h1 *ngIf="userData.child">{{userData.child}}</h1>
         <div *ngIf="events.length < 2">
-            <p>Welcome to the baby log! Start a new day to start logging.</p>
+            <p>Welcome to the baby log! Double check the <a routerLink="/types" style="text-decoration: underline;">types of data you want to track</a>, then start a new day to start logging.</p>
             <p *ngIf="!userData.child">We created this log for you, you can give the baby a name if you want. This name is only stored locally on your device: <input #childName placeholder="Name" type="text" autocomplete="off"><button (click)="addName(childName.value)">Save</button></p>
 
         </div>

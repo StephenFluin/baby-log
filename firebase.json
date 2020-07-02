@@ -4,20 +4,6 @@
   },
   "hosting": [
     {
-      "public": "dist/baby-log/",
-      "ignore": [
-        "firebase.json",
-        "**/.*",
-        "**/node_modules/**"
-      ],
-      "rewrites": [
-        {
-          "source": "**",
-          "destination": "/index.html"
-        }
-      ]
-    },
-    {
       "target": "baby-log",
       "public": "dist/baby-log",
       "ignore": [
