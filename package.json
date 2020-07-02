@@ -19,6 +19,8 @@
     "@angular/platform-browser": "~10.0.2",
     "@angular/platform-browser-dynamic": "~10.0.2",
     "@angular/router": "~10.0.2",
+    "@bugsnag/js": "^7.1.1",
+    "@bugsnag/plugin-angular": "^7.1.1",
     "@swimlane/ngx-charts": "^14.0.0",
     "core-js": "^2.5.4",
     "date-fns": "^2.12.0",

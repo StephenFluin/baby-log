@@ -1,5 +1,5 @@
 import { BrowserModule } from '@angular/platform-browser';
-import { NgModule } from '@angular/core';
+import { NgModule, ErrorHandler } from '@angular/core';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { AppComponent } from './app.component';
@@ -8,6 +8,16 @@ import { AngularFireAuthModule } from '@angular/fire/auth';
 import { RouterModule } from '@angular/router';
 import { MatMenuModule } from '@angular/material/menu';
 import { AngularFireDatabaseModule } from '@angular/fire/database';
+import Bugsnag from '@bugsnag/js';
+import { BugsnagErrorHandler } from '@bugsnag/plugin-angular';
+
+// configure Bugsnag asap
+Bugsnag.start({ apiKey: '8783f99df54186794b7bf3ccb7954947' });
+
+// create a factory which will return the Bugsnag error handler
+export function errorHandlerFactory() {
+    return new BugsnagErrorHandler()
+  }
 
 @NgModule({
     declarations: [AppComponent],
@@ -36,7 +46,7 @@ import { AngularFireDatabaseModule } from '@angular/fire/database';
         ]),
         MatMenuModule,
     ],
-    providers: [],
+    providers: [{ provide: ErrorHandler, useFactory: errorHandlerFactory }],
     bootstrap: [AppComponent],
 })
 export class AppModule {}
