@@ -1,0 +1,137 @@
+<ng-container *ngIf="auth.state | async as state">
+    <div *ngIf="userData.eventList | async as events" class="main">
+        <h1 *ngIf="userData.child">{{userData.child}}</h1>
+        <div *ngIf="events.length < 2">
+            <p>Welcome to the baby log! Start a new day to start logging.</p>
+            <p *ngIf="!userData.child">We created this log for you, you can give the baby a name if you want. This name is only stored locally on your device: <input #childName placeholder="Name" type="text" autocomplete="off"><button (click)="addName(childName.value)">Save</button></p>
+
+        </div>
+        <button
+            class="button-standard button-icon-combo button-important"
+            (click)="userData.createEvent()"
+        >
+            <img src="../assets/images/baseline-add-24px.svg" height="20px" width="20px" />
+            <span i18n>Create New Day</span>
+        </button>
+
+        <div *ngFor="let day of events; index as i" class="day-container">
+            <h2>
+                {{ day.value.date }}
+                <img
+                    (click)="userData.deleteEvent(day.key)"
+                    src="../assets/images/baseline-delete_forever-24px.svg"
+                    height="24px"
+                    width="24px"
+                />
+            </h2>
+
+            <div class="highlight-box">
+                <!-- <ngx-charts-pie-chart [legend]="true" [results]="(day.value | summarizeEvent)['sleepChart']"></ngx-charts-pie-chart> -->
+                <p>
+                    <span i18n>Slept {{(day.value | summarizeEvent)['totalPretty']['asleep']}}</span
+                    ><br />
+                    <span></span>
+                </p>
+            </div>
+
+            <div class="activity-buttons">
+                <button
+                    class="activity-type"
+                    *ngFor="let type of userData.typeList | async"
+                    (click)="userData.addActivity(day.key, day.value, type.value.name ,'')"
+                >
+                    {{type.value.name}}
+                </button>
+            </div>
+            <table style="max-width: 500px;">
+                <ng-container *ngFor="let activity of day.value.activities; index as activityIndex">
+                    <tr>
+                        <td>
+                            <input
+                                [ngxTimepicker]="picker"
+                                [value]="activity.time.substring(11)"
+                                readonly
+                                style="width: 80px; text-align: center;"
+                            />
+                            <ngx-material-timepicker
+                                #picker
+                                [editableHintTmpl]="dialHint"
+                                [enableKeyboardInput]="editableDateMode"
+                                [theme]="darkTheme"
+                                (timeSet)="userData.updateTime(
+                                day.key,
+                                day.value,
+                                day.value.activities[activityIndex],
+                                $event)"
+                            ></ngx-material-timepicker>
+                            <ng-template #dialHint>
+                                <p>
+                                    <button
+                                        (click)="userData.updateDate(day.key,day.value,day.value.activities[activityIndex], -1);picker.close();"
+                                    >
+                                        &lt;&lt;
+                                    </button>
+                                    {{activity.time.substring(0,10)}}
+                                    <button
+                                        (click)="userData.updateDate(day.key,day.value,day.value.activities[activityIndex], 1);picker.close();"
+                                    >
+                                        &gt;&gt;
+                                    </button>
+                                </p>
+                            </ng-template>
+                        </td>
+                        <td>{{ activity.activity }}</td>
+                        <td style="width: 100%;">
+                            <div *ngIf="userData.typeList | async | typeMap as types">
+                                <select
+                                    style="width: 100%;"
+                                    class="custom-select"
+                                    *ngIf="types[activity.activity] && types[activity.activity].length; else raw"
+                                    (input)="activity.activityDetails = $event.target.value;userData.saveEvent(day.key, day.value)"
+                                >
+                                    <option
+                                        *ngFor="let option of types[activity.activity]"
+                                        [selected]="option === activity.activityDetails"
+                                    >
+                                        {{option}}
+                                    </option>
+                                    <option
+                                        *ngIf="types[activity.activity] && types[activity.activity].indexOf(activity.activityDetails) === -1 && activity.activityDetails"
+                                        >{{activity.activityDetails}}</option
+                                    >
+                                </select>
+                            </div>
+                            <ng-template #raw>{{activity.activityDetails}}</ng-template>
+                        </td>
+                        <td>
+                            <div class="icon-circle" (click)="note(day, activityIndex)">
+                                <img src="../assets/images/edit.svg" alt="edit" />
+                            </div>
+                        </td>
+                        <td>
+                            <div
+                                class="icon-circle"
+                                (click)="userData.deleteActivity(day.key, day.value, i, activityIndex)"
+                            >
+                                <img
+                                    src="../assets/images/baseline-delete_forever-24px.svg"
+                                    alt="delete"
+                                />
+                            </div>
+                        </td>
+                    </tr>
+                    <tr *ngIf="activity.notes">
+                        <td colspan="5">{{activity.notes}}</td>
+                    </tr>
+                </ng-container>
+            </table>
+        </div>
+    </div>
+
+
+    <div class="main">
+        <div style="margin-top: 250px;">User {{state.uid}}</div>
+        <div>Family {{userData.familyId}}</div>
+        <!-- <h3 i18n>Settings</h3> -->
+    </div>
+</ng-container>

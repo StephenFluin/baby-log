@@ -1,5 +1,5 @@
 import { Pipe, PipeTransform } from '@angular/core';
-import { Event } from './user-data.service';
+import { Event } from '../user-data.service';
 
 // @TODO it looks like we store null/empty details by default, but the user thinks they have picked something
 const SLEEPDEFAULT = 'crib';

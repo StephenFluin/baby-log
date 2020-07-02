@@ -1,11 +1,11 @@
 import { Pipe, PipeTransform } from '@angular/core';
-import { Event, Type } from './user-data.service';
+import { ActivityType } from '../user-data.service';
 
 @Pipe({
     name: 'typeMap',
 })
 export class TypeMapPipe implements PipeTransform {
-    transform(value: {key: string, value: Type}[], args?: any): any {
+    transform(value: { key: string; value: ActivityType }[], args?: any): any {
         const result = {};
 
         if (!value || !value.length) {

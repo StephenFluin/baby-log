@@ -5,16 +5,12 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { AppComponent } from './app.component';
 import { AngularFireModule } from '@angular/fire';
 import { AngularFireAuthModule } from '@angular/fire/auth';
+import { RouterModule } from '@angular/router';
+import { MatMenuModule } from '@angular/material/menu';
 import { AngularFireDatabaseModule } from '@angular/fire/database';
-import { SummarizeEventPipe } from './summarize-event.pipe';
-import { ManageTypes } from './manage-types';
-import { TypeMapPipe } from './type-map.pipe';
-import { NgxMaterialTimepickerModule } from 'ngx-material-timepicker';
-import { NgxChartsModule } from '@swimlane/ngx-charts';
-
 
 @NgModule({
-    declarations: [AppComponent, SummarizeEventPipe, ManageTypes, TypeMapPipe],
+    declarations: [AppComponent],
     imports: [
         BrowserModule,
         AngularFireModule.initializeApp({
@@ -27,9 +23,18 @@ import { NgxChartsModule } from '@swimlane/ngx-charts';
         }),
         AngularFireAuthModule,
         AngularFireDatabaseModule,
-        NgxMaterialTimepickerModule,
         BrowserAnimationsModule,
-        NgxChartsModule,
+        RouterModule.forRoot([
+            {
+                path: '',
+                loadChildren: () => import('./home/home.module').then((m) => m.HomeModule),
+            },
+            {
+                path: 'types',
+                loadChildren: () => import('./types/types.module').then((m) => m.TypesModule),
+            },
+        ]),
+        MatMenuModule,
     ],
     providers: [],
     bootstrap: [AppComponent],
