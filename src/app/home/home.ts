@@ -1,9 +1,12 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { NgxMaterialTimepickerTheme } from 'ngx-material-timepicker';
 import { Auth } from '../auth.service';
 import { UserData } from '../user-data.service';
 import { Event } from '../user-data.service';
-
+import { Title } from '@angular/platform-browser';
+import { takeUntil } from 'rxjs/operators';
+import { Subject } from 'rxjs';
+import { ActivatedRoute } from '@angular/router';
 
 @Component({
     selector: 'app-home',
@@ -27,7 +30,21 @@ export class Home {
 
     editableDateMode = false;
 
-    constructor(public auth: Auth, public userData: UserData) {}
+    destroy = new Subject();
+
+    constructor(public auth: Auth, public userData: UserData, title: Title, route: ActivatedRoute) {
+        route.paramMap.pipe(takeUntil(this.destroy)).subscribe(paramMap => {
+            if(paramMap.get('code')) {
+                userData.switchToFamilyId(route.snapshot.params['code']);
+            }
+        })
+
+
+        // Can't do this until the service is setup
+        userData.eventSource.pipe(takeUntil(this.destroy)).subscribe((source) => {
+            title.setTitle(userData.child + ' Baby Log');
+        });
+    }
 
     note(day: { value: Event; key: string }, activityIndex: number) {
         let result;
@@ -44,5 +61,8 @@ export class Home {
 
     addName(name: string) {
         this.userData.nameChild(name);
+    }
+    ngOnDestroy() {
+        this.destroy.next();
     }
 }

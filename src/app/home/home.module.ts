@@ -11,7 +11,12 @@ import { RouterModule } from '@angular/router';
     declarations: [Home, TypeMapPipe, SummarizeEventPipe],
     imports: [
         CommonModule,
-        RouterModule.forChild([{path: '', component: Home}]),
+        RouterModule.forChild([
+            {path: '', component: Home},
+            {path: ':code/:name', component: Home},
+            {path: ':code', component: Home},
+
+        ]),
         NgxMaterialTimepickerModule,
     ],
 })

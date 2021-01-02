@@ -18,8 +18,8 @@ Bugsnag.start({ apiKey: '8783f99df54186794b7bf3ccb7954947' });
 
 // create a factory which will return the Bugsnag error handler
 export function errorHandlerFactory() {
-    return new BugsnagErrorHandler()
-  }
+    return new BugsnagErrorHandler();
+}
 
 @NgModule({
     declarations: [AppComponent, FamilyComponent, AttachComponent],
@@ -36,18 +36,26 @@ export function errorHandlerFactory() {
         AngularFireAuthModule,
         AngularFireDatabaseModule,
         BrowserAnimationsModule,
-        RouterModule.forRoot([
-    {
-        path: '',
-        loadChildren: () => import('./home/home.module').then((m) => m.HomeModule),
-    },
-    {
-        path: 'types',
-        loadChildren: () => import('./types/types.module').then((m) => m.TypesModule),
-    },
-    { path: 'family', component: FamilyComponent },
-    { path: 'attach/:code/:name', component: AttachComponent },
-], { relativeLinkResolution: 'legacy' }),
+        RouterModule.forRoot(
+            [
+                {
+                    path: '',
+                    loadChildren: () => import('./home/home.module').then((m) => m.HomeModule),
+                    pathMatch: "full",
+                },
+                {
+                    path: 'child',
+                    loadChildren: () => import('./home/home.module').then((m) => m.HomeModule),
+                },
+                {
+                    path: 'types',
+                    loadChildren: () => import('./types/types.module').then((m) => m.TypesModule),
+                },
+                { path: 'family', component: FamilyComponent },
+                { path: 'attach/:code/:name', component: AttachComponent },
+            ],
+            { relativeLinkResolution: 'legacy' }
+        ),
         MatMenuModule,
     ],
     providers: [{ provide: ErrorHandler, useFactory: errorHandlerFactory }],
