@@ -90,6 +90,11 @@ export class UserData {
             });
         this.connectedFamilies = JSON.parse(localStorage['connectedFamilies'] || '[]');
     }
+
+    /**
+     * Push a new connected family into the DB for the user
+     * Switch to the family
+     */
     async connectNewFamily(id: string, name: string) {
         if (!id) {
             id = await this.createMissingFamily();
@@ -108,12 +113,19 @@ export class UserData {
         );
 
         // Then update UI and render
-        localStorage['connectedFamilies'] = JSON.stringify(this.connectedFamilies);
+        this.saveConnectedFamilies();
         this.switchToFamilyId(id);
     }
 
     nameChild(name:string) {
         this.connectNewFamily(this.familyId,name);
+    }
+
+    /**
+     * Save changes to local storage
+     */
+    saveConnectedFamilies() {
+        localStorage['connectedFamilies'] = JSON.stringify(this.connectedFamilies);
     }
 
     /**

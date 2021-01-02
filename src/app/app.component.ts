@@ -12,11 +12,4 @@ export class AppComponent {
     switchTo(child: {id:string,name:string}) {
         this.userData.switchToFamilyId(child.id);
     }
-    connectNewFamily() {
-        const name = prompt('What name should we use?');
-        const id = prompt(
-            'Do you have an ID for an existing child? Leave blank to create a new child.'
-        );
-        this.userData.connectNewFamily(id, name);
-    }
 }
