@@ -11,6 +11,7 @@ import { AngularFireDatabaseModule } from '@angular/fire/database';
 import Bugsnag from '@bugsnag/js';
 import { BugsnagErrorHandler } from '@bugsnag/plugin-angular';
 import { FamilyComponent } from './family/family.component';
+import { AttachComponent } from './family/attach';
 
 // configure Bugsnag asap
 Bugsnag.start({ apiKey: '8783f99df54186794b7bf3ccb7954947' });
@@ -21,7 +22,7 @@ export function errorHandlerFactory() {
   }
 
 @NgModule({
-    declarations: [AppComponent, FamilyComponent],
+    declarations: [AppComponent, FamilyComponent, AttachComponent],
     imports: [
         BrowserModule,
         AngularFireModule.initializeApp({
@@ -45,6 +46,7 @@ export function errorHandlerFactory() {
                 loadChildren: () => import('./types/types.module').then((m) => m.TypesModule),
             },
             {path:'family',component:FamilyComponent},
+            {path:'attach/:code/:name',component:AttachComponent},
         ]),
         MatMenuModule,
     ],

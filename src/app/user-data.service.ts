@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { AngularFireDatabase, AngularFireList } from '@angular/fire/database';
 import { Auth } from './auth.service';
 import { switchMap, tap, map, shareReplay } from 'rxjs/operators';
-import { empty, Observable, BehaviorSubject, EMPTY } from 'rxjs';
+import { Observable, BehaviorSubject, EMPTY } from 'rxjs';
 import { shareAndCache } from 'http-operators';
 
 import { parse, parseISO, formatISO } from 'date-fns';
