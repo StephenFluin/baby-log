@@ -37,17 +37,17 @@ export function errorHandlerFactory() {
         AngularFireDatabaseModule,
         BrowserAnimationsModule,
         RouterModule.forRoot([
-            {
-                path: '',
-                loadChildren: () => import('./home/home.module').then((m) => m.HomeModule),
-            },
-            {
-                path: 'types',
-                loadChildren: () => import('./types/types.module').then((m) => m.TypesModule),
-            },
-            {path:'family',component:FamilyComponent},
-            {path:'attach/:code/:name',component:AttachComponent},
-        ]),
+    {
+        path: '',
+        loadChildren: () => import('./home/home.module').then((m) => m.HomeModule),
+    },
+    {
+        path: 'types',
+        loadChildren: () => import('./types/types.module').then((m) => m.TypesModule),
+    },
+    { path: 'family', component: FamilyComponent },
+    { path: 'attach/:code/:name', component: AttachComponent },
+], { relativeLinkResolution: 'legacy' }),
         MatMenuModule,
     ],
     providers: [{ provide: ErrorHandler, useFactory: errorHandlerFactory }],
