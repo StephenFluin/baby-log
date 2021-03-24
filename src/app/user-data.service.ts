@@ -76,7 +76,7 @@ export class UserData {
                     if (typeof familyIdOrMap === 'string') {
                         this.switchToFamilyId(familyIdOrMap);
                     } else {
-                        console.log('defaulting to lastfamily, or first entry in',familyIdOrMap);
+                        console.log('defaulting to lastfamily, or first entry in', familyIdOrMap);
                         const id =
                             localStorage['lastFamilyId'] ||
                             Object.keys(familyIdOrMap?.families || {})[0] ||
@@ -117,8 +117,8 @@ export class UserData {
         this.switchToFamilyId(id);
     }
 
-    nameChild(name:string) {
-        this.connectNewFamily(this.familyId,name);
+    nameChild(name: string) {
+        this.connectNewFamily(this.familyId, name);
     }
 
     /**
@@ -144,13 +144,11 @@ export class UserData {
     }
     async switchToFamilyId(familyId: string) {
         console.log('rendering family', familyId);
-        if (!name) {
-            // Let's see if the user gave this person a name!
-            // Names are only EVER stored client side for privacy reasons
-            const child = this.connectedFamilies.find((family) => family.id === familyId)
-            if (child) {
-                this.child = child.name;
-            }
+        // Let's see if the user gave this person a name!
+        // Names are only EVER stored client side for privacy reasons
+        const child = this.connectedFamilies.find((family) => family.id === familyId);
+        if (child) {
+            this.child = child.name;
         }
         // If user doesn't have a family, let's give them one!
         if (!familyId) {
