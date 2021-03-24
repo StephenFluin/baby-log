@@ -16,8 +16,6 @@ export class AppComponent {
         router.events.pipe(filter(e => e instanceof NavigationEnd)).subscribe((n: NavigationEnd) => {
             const pageTitle = router.routerState.snapshot.root.children[0].data['title'];
             ga('send', 'pageview', n.urlAfterRedirects);
-            ga('integration.send','pageview',n.urlAfterRedirects);
-            ga('test.send','pageview',n.urlAfterRedirects);
         });   
     }
     switchTo(child: {id:string,name:string}) {
