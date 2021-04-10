@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
 import { NgxMaterialTimepickerTheme } from 'ngx-material-timepicker';
 import { Auth } from '../auth.service';
 import { UserData } from '../user-data.service';
@@ -12,7 +12,7 @@ import { ActivatedRoute } from '@angular/router';
     selector: 'app-home',
     templateUrl: './home.html',
 })
-export class Home {
+export class Home implements OnDestroy {
     darkTheme: NgxMaterialTimepickerTheme = {
         container: {
             bodyBackgroundColor: '#424242',
@@ -33,16 +33,19 @@ export class Home {
     destroy = new Subject();
 
     constructor(public auth: Auth, public userData: UserData, title: Title, route: ActivatedRoute) {
-        route.paramMap.pipe(takeUntil(this.destroy)).subscribe(paramMap => {
-            if(paramMap.get('code')) {
+        route.paramMap.pipe(takeUntil(this.destroy)).subscribe((paramMap) => {
+            if (paramMap.get('code')) {
                 userData.switchToFamilyId(route.snapshot.params['code']);
             }
-        })
-
+        });
 
         // Can't do this until the service is setup
         userData.eventSource.pipe(takeUntil(this.destroy)).subscribe((source) => {
-            title.setTitle(userData.child + ' Baby Log');
+            if (userData.child) {
+                title.setTitle(userData.child + ' Baby Log');
+            } else {
+                title.setTitle('Baby Log');
+            }
         });
     }
 

@@ -48,6 +48,7 @@ export class UserData {
         tap(() => (this.status = 'ready')),
         shareAndCache('events')
     );
+    eventHistory: Observable<Event[]>;
 
     /** Modifiable version of the AngularFire list */
     types: AngularFireList<ActivityType>;
@@ -163,6 +164,11 @@ export class UserData {
             ref.orderByChild('date').limitToLast(5)
         );
         this.types = this.db.list(`families/${familyId}/types`);
+
+        this.eventHistory = this.db
+            .list<Event>(`families/${familyId}/events`, (ref) => ref.orderByChild('date'))
+            .valueChanges()
+            .pipe(map((list) => list.reverse()));
 
         // Save a new event source based on the current family
         this.eventSource.next(

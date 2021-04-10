@@ -16,11 +16,20 @@
             <a mat-menu-item routerLink="/family">
                 <span>Manage Family</span>
             </a>
+            <a mat-menu-item  [matMenuTriggerFor]="childrenHistory">
+                <span>History</span>
+            </a>
 
         </mat-menu>
 
         <mat-menu #children="matMenu">
             <a *ngFor="let child of userData.connectedFamilies" mat-menu-item (click)="switchTo(child)">{{
+                child.name
+            }}</a>
+        </mat-menu>
+
+        <mat-menu #childrenHistory="matMenu">
+            <a *ngFor="let child of userData.connectedFamilies" mat-menu-item (click)="showHistoryOf(child)">{{
                 child.name
             }}</a>
         </mat-menu>

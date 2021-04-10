@@ -12,6 +12,7 @@ import Bugsnag from '@bugsnag/js';
 import { BugsnagErrorHandler } from '@bugsnag/plugin-angular';
 import { FamilyComponent } from './family/family.component';
 import { AttachComponent } from './family/attach';
+import { History } from './history';
 
 // configure Bugsnag asap
 Bugsnag.start({ apiKey: '8783f99df54186794b7bf3ccb7954947' });
@@ -41,7 +42,7 @@ export function errorHandlerFactory() {
                 {
                     path: '',
                     loadChildren: () => import('./home/home.module').then((m) => m.HomeModule),
-                    pathMatch: "full",
+                    pathMatch: 'full',
                 },
                 {
                     path: 'child',
@@ -51,10 +52,10 @@ export function errorHandlerFactory() {
                     path: 'types',
                     loadChildren: () => import('./types/types.module').then((m) => m.TypesModule),
                 },
+                { path: 'history', loadChildren: () => import('./home/home.module').then((m) => m.HomeModule) },
                 { path: 'family', component: FamilyComponent },
                 { path: 'attach/:code/:name', component: AttachComponent },
             ],
-            { relativeLinkResolution: 'legacy' }
         ),
         MatMenuModule,
     ],
