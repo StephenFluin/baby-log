@@ -2,7 +2,7 @@ import { Component, OnDestroy } from '@angular/core';
 import { UserData } from '../user-data.service';
 import { takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
-import { AngularFireDatabase } from '@angular/fire/database';
+import { AngularFireDatabase } from '@angular/fire/compat/database';
 import Bugsnag from '@bugsnag/js';
 
 export const DEFAULT_TYPES = {
