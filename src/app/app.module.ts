@@ -6,7 +6,7 @@ import { AppComponent } from './app.component';
 import { AngularFireModule } from '@angular/fire/compat';
 import { AngularFireAuthModule } from '@angular/fire/compat/auth';
 import { RouterModule } from '@angular/router';
-import { MatMenuModule } from '@angular/material/menu';
+import { MatLegacyMenuModule as MatMenuModule } from '@angular/material/legacy-menu';
 import { AngularFireDatabaseModule } from '@angular/fire/compat/database';
 import Bugsnag from '@bugsnag/js';
 import { BugsnagErrorHandler } from '@bugsnag/plugin-angular';
