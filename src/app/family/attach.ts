@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { UserData } from '../user-data.service';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Params, Router } from '@angular/router';
+import { Observable } from 'rxjs';
 @Component({
     template: `
         <div class="main">
@@ -15,11 +16,20 @@ import { ActivatedRoute } from '@angular/router';
     `,
 })
 export class AttachComponent {
-    data = this.activatedRoute.params;
-    constructor(public userData: UserData, public activatedRoute: ActivatedRoute) {
+    data:Observable<Params>;
+    constructor(
+        public userData: UserData,
+        public activatedRoute: ActivatedRoute,
+        private router: Router
+    ) {
         // Figure out who they are attaching to, attach, and tell them we did it!
+        this.data = this.activatedRoute.params;
     }
     attach(name, code) {
+        console.log('about to attach');
         this.userData.connectNewFamily(code, name);
+        console.log('attached');
+        this.router.navigate(['']);
+        console.log('navigated after attaching');
     }
 }

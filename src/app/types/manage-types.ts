@@ -3,7 +3,6 @@ import { UserData } from '../user-data.service';
 import { takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 import { AngularFireDatabase } from '@angular/fire/compat/database';
-import Bugsnag from '@bugsnag/js';
 
 export const DEFAULT_TYPES = {
     feed: ['left', 'right', 'bottle'],
@@ -22,7 +21,6 @@ export class ManageTypes implements OnDestroy {
     cleanup = new Subject();
 
     constructor(public userData: UserData) {
-        Bugsnag.notify(new Error('Test error'));
         userData.typeList.pipe(takeUntil(this.cleanup)).subscribe((types) => {
             if (types.length === 0) {
                 // No types found, let's insert the defaults
@@ -33,7 +31,7 @@ export class ManageTypes implements OnDestroy {
         });
     }
     ngOnDestroy() {
-        this.cleanup.next();
+        this.cleanup.next(null);
     }
     updateDetails(typeId: string, details: string[], newDetailBox) {
         if (!details) {

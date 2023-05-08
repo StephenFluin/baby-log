@@ -8,19 +8,9 @@ import { AngularFireAuthModule } from '@angular/fire/compat/auth';
 import { RouterModule } from '@angular/router';
 import { MatMenuModule } from '@angular/material/menu';
 import { AngularFireDatabaseModule } from '@angular/fire/compat/database';
-import Bugsnag from '@bugsnag/js';
-import { BugsnagErrorHandler } from '@bugsnag/plugin-angular';
 import { FamilyComponent } from './family/family.component';
 import { AttachComponent } from './family/attach';
 import { History } from './history';
-
-// configure Bugsnag asap
-Bugsnag.start({ apiKey: '8783f99df54186794b7bf3ccb7954947' });
-
-// create a factory which will return the Bugsnag error handler
-export function errorHandlerFactory() {
-    return new BugsnagErrorHandler();
-}
 
 @NgModule({
     declarations: [AppComponent, FamilyComponent, AttachComponent],
@@ -37,29 +27,29 @@ export function errorHandlerFactory() {
         AngularFireAuthModule,
         AngularFireDatabaseModule,
         BrowserAnimationsModule,
-        RouterModule.forRoot(
-            [
-                {
-                    path: '',
-                    loadChildren: () => import('./home/home.module').then((m) => m.HomeModule),
-                    pathMatch: 'full',
-                },
-                {
-                    path: 'child',
-                    loadChildren: () => import('./home/home.module').then((m) => m.HomeModule),
-                },
-                {
-                    path: 'types',
-                    loadChildren: () => import('./types/types.module').then((m) => m.TypesModule),
-                },
-                { path: 'history', loadChildren: () => import('./home/home.module').then((m) => m.HomeModule) },
-                { path: 'family', component: FamilyComponent },
-                { path: 'attach/:code/:name', component: AttachComponent },
-            ],
-        ),
+        RouterModule.forRoot([
+            {
+                path: '',
+                loadChildren: () => import('./home/home.module').then((m) => m.HomeModule),
+                pathMatch: 'full',
+            },
+            {
+                path: 'child',
+                loadChildren: () => import('./home/home.module').then((m) => m.HomeModule),
+            },
+            {
+                path: 'types',
+                loadChildren: () => import('./types/types.module').then((m) => m.TypesModule),
+            },
+            {
+                path: 'history',
+                loadChildren: () => import('./home/home.module').then((m) => m.HomeModule),
+            },
+            { path: 'family', component: FamilyComponent },
+            { path: 'attach/:code/:name', component: AttachComponent },
+        ]),
         MatMenuModule,
     ],
-    providers: [{ provide: ErrorHandler, useFactory: errorHandlerFactory }],
     bootstrap: [AppComponent],
 })
 export class AppModule {}

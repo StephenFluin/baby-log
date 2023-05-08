@@ -1,10 +1,9 @@
 import { Component, OnDestroy } from '@angular/core';
-import { NgxMaterialTimepickerTheme } from 'ngx-material-timepicker';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Auth } from '../auth.service';
 import { UserData } from '../user-data.service';
 import { Event } from '../user-data.service';
 import { Title } from '@angular/platform-browser';
-import { takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
 
@@ -12,35 +11,35 @@ import { ActivatedRoute } from '@angular/router';
     selector: 'app-home',
     templateUrl: './home.html',
 })
-export class Home implements OnDestroy {
-    darkTheme: NgxMaterialTimepickerTheme = {
-        container: {
-            bodyBackgroundColor: '#424242',
-            buttonColor: '#fff',
-        },
-        dial: {
-            dialBackgroundColor: '#555',
-        },
-        clockFace: {
-            clockFaceBackgroundColor: '#555',
-            clockHandColor: '#9fbd90',
-            clockFaceTimeInactiveColor: '#fff',
-        },
-    };
+export class Home {
+    // darkTheme: NgxMaterialTimepickerTheme = {
+    //     container: {
+    //         bodyBackgroundColor: '#424242',
+    //         buttonColor: '#fff',
+    //     },
+    //     dial: {
+    //         dialBackgroundColor: '#555',
+    //     },
+    //     clockFace: {
+    //         clockFaceBackgroundColor: '#555',
+    //         clockHandColor: '#9fbd90',
+    //         clockFaceTimeInactiveColor: '#fff',
+    //     },
+    // };
 
     editableDateMode = false;
 
     destroy = new Subject();
 
     constructor(public auth: Auth, public userData: UserData, title: Title, route: ActivatedRoute) {
-        route.paramMap.pipe(takeUntil(this.destroy)).subscribe((paramMap) => {
+        route.paramMap.pipe(takeUntilDestroyed()).subscribe((paramMap) => {
             if (paramMap.get('code')) {
                 userData.switchToFamilyId(route.snapshot.params['code']);
             }
         });
 
         // Can't do this until the service is setup
-        userData.eventSource.pipe(takeUntil(this.destroy)).subscribe((source) => {
+        userData.eventSource.pipe(takeUntilDestroyed()).subscribe((source) => {
             if (userData.child) {
                 title.setTitle(userData.child + ' Baby Log');
             } else {
@@ -64,8 +63,5 @@ export class Home implements OnDestroy {
 
     addName(name: string) {
         this.userData.nameChild(name);
-    }
-    ngOnDestroy() {
-        this.destroy.next();
     }
 }

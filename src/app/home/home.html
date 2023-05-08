@@ -60,12 +60,12 @@
                     <tr>
                         <td>
                             <input
-                                [ngxTimepicker]="picker"
+                                [ngxMatTimepicker]="picker"
                                 [value]="activity.time.substring(11)"
                                 readonly
                                 style="width: 80px; text-align: center"
                             />
-                            <ngx-material-timepicker
+                            <ngx-mat-timepicker
                                 #picker
                                 [editableHintTmpl]="dialHint"
                                 [enableKeyboardInput]="editableDateMode"
@@ -75,7 +75,7 @@
                                 day.value,
                                 day.value.activities[activityIndex],
                                 $event)"
-                            ></ngx-material-timepicker>
+                            ></ngx-mat-timepicker>
                             <ng-template #dialHint>
                                 <p>
                                     <button

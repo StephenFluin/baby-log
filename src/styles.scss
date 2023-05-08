@@ -2,8 +2,14 @@
     font-family: Arial, Helvetica, sans-serif;
     box-sizing: border-box;
 }
-html, body { height: 100%; }
-body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+html,
+body {
+    height: 100%;
+}
+body {
+    margin: 0;
+    font-family: Roboto, 'Helvetica Neue', sans-serif;
+}
 
 body {
     font-size: 16px;
@@ -104,7 +110,6 @@ td > input {
     height: 32px;
     font-size: 16px;
     border-radius: 4px;
-    background-color: white;
     position: relative;
     vertical-align: middle;
 }
@@ -182,53 +187,66 @@ button {
     }
 }
 
+// Resets for Time Picker
+ngx-mat-timepicker-content {
+    button {
+        background-color: transparent;
+        color: var(--mat-mdc-fab-color, inherit);
+    }
+    input {
+        background-color: transparent;
+        color: inherit;
+    }
+    .mat-toolbar-row, .mat-toolbar-single-row {
+        height:150px;
+    }
+}
+
 // Dark Theme
 body {
     background-color: #161d2e !important;
     color: #eee !important;
+}
+.highlight-box {
+    background-color: #161d2e !important;
+    color: white !important;
+    border: 1px solid #717b94 !important;
+}
 
-    .highlight-box {
-        background-color: #161d2e !important;
-        color: white !important;
-        border: 1px solid #717b94 !important;
-    }
-
-    .day-container {
-        h2 {
-            img {
-                background: #717b94;
-                border-radius: 50%;
-                padding: 4px;
-                height: 28px;
-                width: 28px;
-            }
+.day-container {
+    h2 {
+        img {
+            background: #717b94;
+            border-radius: 50%;
+            padding: 4px;
+            height: 28px;
+            width: 28px;
         }
-    }
-
-    select.custom-select,
-    input {
-        background-color: #555963 !important;
-        color: white !important;
-        border: none;
-    }
-
-    .toolbar {
-        background-color: #0a101f !important;
-    }
-
-    .icon-circle {
-        background-color: #717b94 !important;
-        color: black !important;
-    }
-
-    button:not(.activity-type) {
-        background-color: #a3a9bb !important;
-        color: black !important;
-        font-weight: bold !important;
-    }
-
-    button.activity-type {
-        background-color: #406e8e !important;
     }
 }
 
+select.custom-select,
+input {
+    background-color: #555963;
+    color: white;
+    border: none;
+}
+
+.toolbar {
+    background-color: #0a101f !important;
+}
+
+.icon-circle {
+    background-color: #717b94 !important;
+    color: black !important;
+}
+
+button {
+    background-color: #a3a9bb;
+    color: black;
+    font-weight: bold;
+}
+
+button.activity-type {
+    background-color: #406e8e !important;
+}

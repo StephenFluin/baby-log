@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { Home } from './home';
-import { NgxMaterialTimepickerModule } from 'ngx-material-timepicker';
+import { NgxMatTimepickerModule } from 'ngx-mat-timepicker';
 import { TypeMapPipe } from './type-map.pipe';
 import { SummarizeEventPipe } from './summarize-event.pipe';
 import { CommonModule } from '@angular/common';
@@ -18,7 +18,7 @@ import { History } from '../history';
             { path: ':code/:name', component: Home },
             { path: ':code', component: Home },
         ]),
-        NgxMaterialTimepickerModule,
+        NgxMatTimepickerModule,
     ],
 })
 export class HomeModule {}
