@@ -39,7 +39,7 @@
     "@types/jasminewd2": "~2.0.3",
     "@types/node": "^12.11.1",
     "codelyzer": "^6.0.0",
-    "firebase-tools": "^11.16.0",
+    "firebase-tools": "^15.1.0",
     "fuzzy": "^0.1.3",
     "inquirer": "^6.2.2",
     "inquirer-autocomplete-prompt": "^1.0.1",
@@ -50,7 +50,6 @@
     "karma-coverage-istanbul-reporter": "~2.0.1",
     "karma-jasmine": "~4.0.0",
     "karma-jasmine-html-reporter": "^1.5.0",
-    "protractor": "~7.0.0",
     "ts-node": "~7.0.0",
     "tslint": "~6.1.0",
     "typescript": "~5.0.4"
