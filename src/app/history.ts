@@ -1,11 +1,12 @@
 import { Component, effect, inject, input, signal } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { Event, UserData } from './user-data.service';
+import { ShareFooter } from './share-footer';
 
 @Component({
     selector: 'app-history',
     templateUrl: './history.html',
-    standalone: false,
+    imports: [ShareFooter],
 })
 export class History {
     userData = inject(UserData);

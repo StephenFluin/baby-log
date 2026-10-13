@@ -1,12 +1,19 @@
 import { Component, inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { Auth } from './auth.service';
 import { ConnectedFamily, UserData } from './user-data.service';
+import { MatMenuTrigger, MatMenu, MatMenuItem } from '@angular/material/menu';
 
 @Component({
     selector: 'app-root',
     templateUrl: './app.component.html',
-    standalone: false,
+    imports: [
+        RouterLink,
+        MatMenuTrigger,
+        MatMenu,
+        MatMenuItem,
+        RouterOutlet,
+    ],
 })
 export class AppComponent {
     auth = inject(Auth);

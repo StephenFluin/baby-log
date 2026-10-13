@@ -1,11 +1,21 @@
 import { Component, effect, inject, input } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { Event, UserData } from '../user-data.service';
+import { RouterLink } from '@angular/router';
+import { NgxMatTimepickerDirective, NgxMatTimepickerComponent } from 'ngx-mat-timepicker';
+import { ShareFooter } from '../share-footer';
+import { SummarizeEventPipe } from './summarize-event.pipe';
 
 @Component({
     selector: 'app-home',
     templateUrl: './home.html',
-    standalone: false,
+    imports: [
+        RouterLink,
+        NgxMatTimepickerDirective,
+        NgxMatTimepickerComponent,
+        ShareFooter,
+        SummarizeEventPipe,
+    ],
 })
 export class Home {
     userData = inject(UserData);

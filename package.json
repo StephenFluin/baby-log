@@ -8,7 +8,6 @@
   },
   "private": true,
   "dependencies": {
-    "@angular/animations": "^22.2.2",
     "@angular/cdk": "^22.2.2",
     "@angular/common": "^22.2.2",
     "@angular/compiler": "^22.2.2",
@@ -17,7 +16,6 @@
     "@angular/localize": "^22.2.2",
     "@angular/material": "^22.2.2",
     "@angular/platform-browser": "^22.2.2",
-    "@angular/platform-browser-dynamic": "^22.2.2",
     "@angular/router": "^22.2.2",
     "date-fns": "^2.12.0",
     "firebase": "^13.0.0",

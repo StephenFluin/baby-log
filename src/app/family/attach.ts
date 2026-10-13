@@ -12,7 +12,6 @@ import { UserData } from '../user-data.service';
             <button (click)="attach()">Attach</button>
         </div>
     `,
-    standalone: false,
 })
 export class AttachComponent {
     private userData = inject(UserData);

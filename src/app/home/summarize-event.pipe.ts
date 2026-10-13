@@ -4,10 +4,7 @@ import { Event } from '../user-data.service';
 // @TODO it looks like we store null/empty details by default, but the user thinks they have picked something
 const SLEEPDEFAULT = 'crib';
 
-@Pipe({
-    name: 'summarizeEvent',
-    standalone: false
-})
+@Pipe({ name: 'summarizeEvent' })
 export class SummarizeEventPipe implements PipeTransform {
     transform(value: Event, args?: any): any {
         const event: Event = Object.assign(value);

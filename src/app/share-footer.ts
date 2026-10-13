@@ -21,7 +21,6 @@ import { UserData } from './user-data.service';
             </div>
         </div>
     `,
-    standalone: false,
 })
 export class ShareFooter {
     auth = inject(Auth);

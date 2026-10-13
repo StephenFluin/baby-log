@@ -64,7 +64,6 @@ import { ConnectedFamily, UserData } from '../user-data.service';
             }
         </div>
     `,
-    standalone: false,
 })
 export class FamilyComponent {
     userData = inject(UserData);
