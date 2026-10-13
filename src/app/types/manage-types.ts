@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, effect, inject } from '@angular/core';
+import { Component, effect, inject } from '@angular/core';
 import { UserData } from '../user-data.service';
 
 export const DEFAULT_TYPES = {
@@ -13,7 +13,6 @@ export const DEFAULT_TYPES = {
 @Component({
     selector: 'app-manage-types',
     templateUrl: 'manage-types.html',
-    changeDetection: ChangeDetectionStrategy.OnPush,
     standalone: false,
 })
 export class ManageTypes {

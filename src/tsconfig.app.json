@@ -5,7 +5,7 @@
     "types": []
   },
   "angularCompilerOptions": {
-      "enableIvy": true
+    "strictTemplates": false
   },
   "files": [
     "main.ts"

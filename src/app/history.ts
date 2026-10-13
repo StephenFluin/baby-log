@@ -1,11 +1,10 @@
-import { ChangeDetectionStrategy, Component, effect, inject, input, signal } from '@angular/core';
+import { Component, effect, inject, input, signal } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { Event, UserData } from './user-data.service';
 
 @Component({
     selector: 'app-history',
     templateUrl: './history.html',
-    changeDetection: ChangeDetectionStrategy.OnPush,
     standalone: false,
 })
 export class History {

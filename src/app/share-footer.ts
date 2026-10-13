@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { Auth } from './auth.service';
 import { UserData } from './user-data.service';
 
@@ -21,7 +21,6 @@ import { UserData } from './user-data.service';
             </div>
         </div>
     `,
-    changeDetection: ChangeDetectionStrategy.OnPush,
     standalone: false,
 })
 export class ShareFooter {

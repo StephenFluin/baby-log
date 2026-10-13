@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
+import { Component, inject, input } from '@angular/core';
 import { Router } from '@angular/router';
 import { UserData } from '../user-data.service';
 
@@ -12,7 +12,6 @@ import { UserData } from '../user-data.service';
             <button (click)="attach()">Attach</button>
         </div>
     `,
-    changeDetection: ChangeDetectionStrategy.OnPush,
     standalone: false,
 })
 export class AttachComponent {

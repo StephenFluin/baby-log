@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { ConnectedFamily, UserData } from '../user-data.service';
 
 @Component({
@@ -64,7 +64,6 @@ import { ConnectedFamily, UserData } from '../user-data.service';
             }
         </div>
     `,
-    changeDetection: ChangeDetectionStrategy.OnPush,
     standalone: false,
 })
 export class FamilyComponent {
