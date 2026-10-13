@@ -29,7 +29,7 @@
             (click)="userData.createEvent()"
         >
             <img src="../assets/images/baseline-add-24px.svg" height="20px" width="20px" />
-            <span i18n>Create New Day</span>
+            <span>Create New Day</span>
         </button>
 
         @for (day of events; track day.key) {
@@ -46,7 +46,7 @@
 
                 <div class="highlight-box">
                     <p>
-                        <span i18n
+                        <span
                             >Slept {{ (day.value | summarizeEvent)['totalPretty']['asleep'] }}</span
                         ><br />
                         <span></span>

@@ -21,9 +21,6 @@
               "base": "dist/baby-log"
             },
             "index": "src/index.html",
-            "polyfills": [
-              "@angular/localize/init"
-            ],
             "tsConfig": "src/tsconfig.app.json",
             "assets": [
               "src/favicon.ico",
@@ -49,8 +46,7 @@
                   "type": "anyComponentStyle",
                   "maximumWarning": "6kb"
                 }
-              ],
-              "localize": false
+              ]
             },
             "development": {
               "optimization": false,
@@ -72,18 +68,6 @@
             }
           },
           "defaultConfiguration": "development"
-        },
-        "extract-i18n": {
-          "builder": "@angular/build:extract-i18n",
-          "options": {
-            "buildTarget": "baby-log:build"
-          }
-        }
-      },
-      "i18n": {
-        "sourceLocale": "en-US",
-        "locales": {
-          "fr": "src/messages.fr.xlf"
         }
       }
     }
