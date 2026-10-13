@@ -107,8 +107,10 @@ export class UserData {
         return result;
     });
 
+    /** People who can see and edit each family's log */
+    readonly familyMembers = signal<Record<string, Member[]>>({});
     /** People who can see and edit the current family's log */
-    readonly members = signal<Member[]>([]);
+    readonly members = computed(() => this.familyMembers()[this.familyId() ?? ''] ?? []);
 
     private eventsLoaded = signal(false);
     readonly status = computed(() => (this.eventsLoaded() ? 'ready' : 'waiting'));
@@ -183,7 +185,23 @@ export class UserData {
                     (error) => console.error('Unable to load name', error)
                 )
             );
-            onCleanup(() => unsubscribes.forEach((unsubscribe) => unsubscribe()));
+            const unsubscribeMembers = familyIds.map((familyId) =>
+                onValue(
+                    ref(this.db, `families/${familyId}/members`),
+                    (snapshot) => {
+                        const uid = this.auth.uid();
+                        const members = snapshotList<{ name: string }>(snapshot)
+                            .map((member) => ({ uid: member.key, name: member.value.name }))
+                            // You first, then everyone else by name
+                            .sort((a, b) =>
+                                a.uid === uid ? -1 : b.uid === uid ? 1 : a.name.localeCompare(b.name)
+                            );
+                        this.familyMembers.update((all) => ({ ...all, [familyId]: members }));
+                    },
+                    (error) => console.error('Unable to load members', error)
+                )
+            );
+            onCleanup(() => [...unsubscribes, ...unsubscribeMembers].forEach((unsubscribe) => unsubscribe()));
         });
 
         // Keep events and types in sync with the current family
@@ -211,17 +229,6 @@ export class UserData {
                 },
                 (error) => console.error('Unable to load events', error)
             );
-            const unsubscribeMembers = onValue(
-                ref(this.db, `families/${familyId}/members`),
-                (snapshot) =>
-                    this.members.set(
-                        snapshotList<{ name: string }>(snapshot).map((member) => ({
-                            uid: member.key,
-                            name: member.value.name,
-                        }))
-                    ),
-                (error) => console.error('Unable to load members', error)
-            );
             const unsubscribeTypes = onValue(
                 ref(this.db, `families/${familyId}/types`),
                 (snapshot) => {
@@ -234,7 +241,6 @@ export class UserData {
             );
             onCleanup(() => {
                 unsubscribeEvents();
-                unsubscribeMembers();
                 unsubscribeTypes();
             });
         });
@@ -315,14 +321,8 @@ export class UserData {
         return `${location.origin}/attach/${token}`;
     }
 
-    removeMember(uid: string) {
-        return remove(ref(this.db, `families/${this.familyId()}/members/${uid}`));
-    }
-
-    /** How many people can see a family's log */
-    async memberCount(familyId: string) {
-        const snapshot = await get(ref(this.db, `families/${familyId}/members`));
-        return snapshot.size;
+    removeMember(familyId: string, uid: string) {
+        return remove(ref(this.db, `families/${familyId}/members/${uid}`));
     }
 
     private async isMember(familyId: string) {
@@ -378,7 +378,7 @@ export class UserData {
         this.serverFamilyIds.set([]);
         this.familyId.set(null);
         this.familyNames.set({});
-        this.members.set([]);
+        this.familyMembers.set({});
         this.events.set(null);
         this.types.set(null);
         this.eventsLoaded.set(false);

@@ -7,7 +7,7 @@ test('adds and detaches children', async ({ page }) => {
     await page.getByRole('button', { name: 'Save' }).click();
 
     await openMenu(page, 'Manage Family');
-    await page.getByRole('button', { name: 'New' }).click();
+    await page.getByRole('button', { name: 'New child' }).click();
     await page.getByLabel("Child's Name").fill('Second');
     await page.getByRole('button', { name: 'Create' }).click();
     await expect(page.getByLabel('Name of Second')).toBeVisible();
@@ -16,7 +16,7 @@ test('adds and detaches children', async ({ page }) => {
     await expect(page.getByRole('heading', { name: 'First', level: 1 })).toBeVisible();
 
     await openMenu(page, 'Manage Family');
-    await page.getByRole('button', { name: 'Detach Second' }).click();
+    await page.getByRole('region', { name: 'Second' }).getByRole('button', { name: 'Detach' }).click();
     await confirmDialog(page, 'Detach');
     await expect(page.getByLabel('Name of Second')).toHaveCount(0);
     await expect(page.getByLabel('Name of First')).toBeVisible();
@@ -25,7 +25,7 @@ test('adds and detaches children', async ({ page }) => {
 test('keeps names on new devices and uploads names saved by older versions', async ({ page }) => {
     await signIn(page, 'Traveler');
     await openMenu(page, 'Manage Family');
-    await page.getByRole('button', { name: 'New' }).click();
+    await page.getByRole('button', { name: 'New child' }).click();
     await page.getByLabel("Child's Name").fill('Named');
     await page.getByRole('button', { name: 'Create' }).click();
     await expect(page.getByRole('button', { name: 'Viewing Named. Switch child' })).toBeVisible();

@@ -43,10 +43,11 @@ test('shares a child with an invite link that only works once', async ({ page })
     // The owner can see who has access and remove them
     await signIn(page, 'Owner');
     await openMenu(page, 'Manage Family');
-    await expect(page.getByText('Helper')).toBeVisible();
-    await page.getByRole('listitem').filter({ hasText: 'Helper' }).getByRole('button', { name: 'Remove' }).click();
+    const shared = page.getByRole('region', { name: 'Shared' });
+    await expect(shared.getByRole('listitem')).toHaveText([/Owner\s*\(you\)/, /Helper/]);
+    await shared.getByRole('button', { name: 'Remove Helper from Shared' }).click();
     await confirmDialog(page, 'Remove');
-    await expect(page.getByText('Helper')).toHaveCount(0);
+    await expect(shared.getByText('Helper')).toHaveCount(0);
 });
 
 test('explains that links from before invites no longer work', async ({ page }) => {
