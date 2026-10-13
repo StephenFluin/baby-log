@@ -1,5 +1,6 @@
 import { computed, effect, inject, Injectable, signal } from '@angular/core';
 import {
+    get,
     limitToLast,
     onValue,
     orderByChild,
@@ -7,6 +8,7 @@ import {
     query,
     ref,
     remove,
+    serverTimestamp,
     set,
     update,
 } from 'firebase/database';
@@ -37,6 +39,20 @@ export interface ConnectedFamily {
     id: string;
     name: string;
 }
+export interface Member {
+    uid: string;
+    name: string;
+}
+
+export interface Invite {
+    familyId: string;
+    childName?: string;
+    createdBy: string;
+    expires: number;
+}
+
+/** How long an invite link works for */
+export const INVITE_LIFETIME = 7 * 24 * 60 * 60 * 1000;
 
 @Injectable({
     providedIn: 'root',
@@ -68,16 +84,8 @@ export class UserData {
         return result;
     });
 
-    /** A mailto: link inviting someone else to attach the current child to their account */
-    readonly shareLink = computed(() => {
-        const child = this.child() || '';
-        const attachUrl = `https://baby.fluin.io/attach/${encodeURIComponent(
-            this.familyId() || ''
-        )}/${encodeURIComponent(child)}`;
-        const subject = `Baby Log: Add ${child} to your account`;
-        const body = `Here is the link to add ${child} to your Baby Log account:\r\n\r\n${attachUrl}`;
-        return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    });
+    /** People who can see and edit the current family's log */
+    readonly members = signal<Member[]>([]);
 
     private eventsLoaded = signal(false);
     readonly status = computed(() => (this.eventsLoaded() ? 'ready' : 'waiting'));
@@ -144,6 +152,17 @@ export class UserData {
                 },
                 (error) => console.error('Unable to load events', error)
             );
+            const unsubscribeMembers = onValue(
+                ref(this.db, `families/${familyId}/members`),
+                (snapshot) =>
+                    this.members.set(
+                        snapshotList<{ name: string }>(snapshot).map((member) => ({
+                            uid: member.key,
+                            name: member.value.name,
+                        }))
+                    ),
+                (error) => console.error('Unable to load members', error)
+            );
             const unsubscribeTypes = onValue(
                 ref(this.db, `families/${familyId}/types`),
                 (snapshot) => {
@@ -156,6 +175,7 @@ export class UserData {
             );
             onCleanup(() => {
                 unsubscribeEvents();
+                unsubscribeMembers();
                 unsubscribeTypes();
             });
         });
@@ -181,12 +201,90 @@ export class UserData {
             id = await this.createMissingFamily();
         }
         this.connectedFamilies.update((families) => [...families, { id, name }]);
-        // First create permissions on the new family
         await this.grantFamilyAccess(id);
 
         // Then update UI and render
         this.saveConnectedFamilies();
         this.switchToFamilyId(id);
+    }
+
+    /** Look up an invite, or null if it doesn't exist (or was already used) */
+    async getInvite(token: string): Promise<Invite | null> {
+        const snapshot = await get(ref(this.db, `invites/${token}`));
+        return snapshot.val();
+    }
+
+    /**
+     * Join a family someone else shared, using up their invite
+     * @throws if the invite has expired or was already used
+     */
+    async acceptInvite(token: string, invite: Invite) {
+        const { familyId } = invite;
+        if (!(await this.isMember(familyId))) {
+            await update(ref(this.db), {
+                [`families/${familyId}/members/${this.auth.uid()}`]: {
+                    name: this.memberName(),
+                    joined: serverTimestamp(),
+                    invite: token,
+                },
+                [`invites/${token}`]: null,
+            });
+        }
+        // Only list the family once the user is a member, since listing it switches to it
+        await this.grantFamilyAccess(familyId);
+        if (!this.connectedFamilies().some((family) => family.id === familyId)) {
+            const name = invite.childName || 'Shared child';
+            this.connectedFamilies.update((families) => [...families, { id: familyId, name }]);
+            this.saveConnectedFamilies();
+        }
+        await this.switchToFamilyId(familyId);
+    }
+
+    /**
+     * Create a single use invite to the current family
+     * @returns the link to send to the person being invited
+     */
+    async createInvite() {
+        const bytes = crypto.getRandomValues(new Uint8Array(24));
+        const token = btoa(String.fromCharCode(...bytes))
+            .replace(/\+/g, '-')
+            .replace(/\//g, '_')
+            .replace(/=+$/, '');
+        const invite: Invite = {
+            familyId: this.familyId()!,
+            createdBy: this.auth.uid()!,
+            expires: Date.now() + INVITE_LIFETIME,
+        };
+        const childName = this.child();
+        if (childName) {
+            invite.childName = childName.slice(0, 100);
+        }
+        await set(ref(this.db, `invites/${token}`), invite);
+        return `${location.origin}/attach/${token}`;
+    }
+
+    removeMember(uid: string) {
+        return remove(ref(this.db, `families/${this.familyId()}/members/${uid}`));
+    }
+
+    /** How many people can see a family's log */
+    async memberCount(familyId: string) {
+        const snapshot = await get(ref(this.db, `families/${familyId}/members`));
+        return snapshot.size;
+    }
+
+    private async isMember(familyId: string) {
+        try {
+            const snapshot = await get(ref(this.db, `families/${familyId}/members/${this.auth.uid()}`));
+            return snapshot.exists();
+        } catch {
+            // Non-members aren't allowed to read the family at all
+            return false;
+        }
+    }
+
+    private memberName() {
+        return (this.auth.user()?.displayName || 'Family member').slice(0, 100);
     }
 
     nameChild(name: string) {
@@ -210,7 +308,8 @@ export class UserData {
                 this.serverFamilyIds.find((familyId) => familyId !== child.id) || null
             );
         }
-        // Then revoke this user's access to the child's log
+        // Then give up this user's access to the child's log
+        await remove(ref(this.db, `families/${child.id}/members/${this.auth.uid()}`));
         await remove(ref(this.db, `users/${this.auth.uid()}/families/${child.id}`));
     }
 
@@ -222,7 +321,7 @@ export class UserData {
     }
 
     /**
-     * Give the user access to a family, keeping access to existing ones
+     * Add a family to the user's list of families, keeping existing ones
      * (including a legacy single family ID stored directly on the user)
      */
     private grantFamilyAccess(familyId: string) {
@@ -238,6 +337,7 @@ export class UserData {
         this.familyId.set(null);
         this.child.set(null);
         this.connectedFamilies.set([]);
+        this.members.set([]);
         this.events.set(null);
         this.types.set(null);
         this.eventsLoaded.set(false);
@@ -263,14 +363,20 @@ export class UserData {
     }
 
     /**
-     * Create a new family ID and give the user permission to the family
+     * Create a new family with the user as its only member
      * This can happen either as part of initial setup (when the user is being created)
      * Or when a user is adding a child to their profile.
      */
     async createMissingFamily() {
         const key = push(ref(this.db, 'families')).key!;
+        await set(ref(this.db, `families/${key}`), {
+            creationDate: localeIsoString(new Date()),
+            members: {
+                [this.auth.uid()!]: { name: this.memberName(), joined: serverTimestamp() },
+            },
+        });
+        // Only list the family once the user is a member, since listing it switches to it
         await this.grantFamilyAccess(key);
-        await set(ref(this.db, `families/${key}/`), { creationDate: localeIsoString(new Date()) });
         return key;
     }
     async switchToFamilyId(familyId: string | null) {

@@ -1,6 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
+import { Auth } from '../auth.service';
 import { Dialogs } from '../dialogs';
-import { ConnectedFamily, UserData } from '../user-data.service';
+import { ConnectedFamily, Member, UserData } from '../user-data.service';
 
 @Component({
     selector: 'app-family',
@@ -38,62 +39,58 @@ import { ConnectedFamily, UserData } from '../user-data.service';
             @if (!showNew()) {
                 <button type="button" (click)="showNew.set(true)">New</button>
             } @else {
-                <form (submit)="$event.preventDefault(); create(nameInput.value, code())">
+                <form (submit)="$event.preventDefault(); create(nameInput.value)">
                     <h3>New</h3>
-                    <table>
-                        <tr>
-                            <td><label for="new-child-name">Child's Name</label></td>
-                            <td><input id="new-child-name" type="text" placeholder="Stephen" #nameInput /></td>
-                        </tr>
-                        @if (!showCode()) {
-                            <tr>
-                                <td><label for="shared-child">Shared Child</label></td>
-                                <td><input id="shared-child" type="checkbox" (change)="showCode.set(true)" /></td>
-                            </tr>
-                        } @else {
-                            <tr>
-                                <td><label for="shared-child-code">Shared Child Code</label></td>
-                                <td>
-                                    <input
-                                        id="shared-child-code"
-                                        type="text"
-                                        (input)="code.set(codeInput.value)"
-                                        #codeInput
-                                    />
-                                </td>
-                                <td colspan="2">
-                                    Were you given a code from the bottom of an existing child? Feel
-                                    free to leave blank to create a new child.
-                                </td>
-                            </tr>
-                        }
-                    </table>
+                    <label for="new-child-name">Child's Name</label>
+                    <input id="new-child-name" type="text" placeholder="Stephen" #nameInput />
                     <button type="submit">Create</button>
+                    <p>
+                        To add a child someone else is already logging, ask them for an invite link
+                        from the bottom of their child's page.
+                    </p>
                 </form>
             }
+
+            <h3>People who can see {{ userData.child() || 'this log' }}</h3>
+            <ul>
+                @for (member of userData.members(); track member.uid) {
+                    <li>
+                        {{ member.name }}
+                        @if (member.uid === auth.uid()) {
+                            (you)
+                        } @else {
+                            <button type="button" (click)="removeMember(member)">Remove</button>
+                        }
+                    </li>
+                }
+            </ul>
         </div>
     `,
 })
 export class FamilyComponent {
     userData = inject(UserData);
+    auth = inject(Auth);
     private dialogs = inject(Dialogs);
 
     showNew = signal(false);
-    showCode = signal(false);
-    /** Family ID of an existing child to attach to */
-    code = signal('');
 
-    create(name: string, code: string) {
-        this.userData.connectNewFamily(code, name);
+    create(name: string) {
+        this.userData.connectNewFamily(null, name);
+        this.showNew.set(false);
     }
     async delete(child: ConnectedFamily) {
-        if (
-            await this.dialogs.confirm(
-                `Detach ${child.name}? You can reconnect if you still have the child's code.`,
-                'Detach'
-            )
-        ) {
+        const onlyMember = (await this.userData.memberCount(child.id)) <= 1;
+        const message = onlyMember
+            ? `You're the only one who can see ${child.name}'s log. If you detach, nobody will be able to see it again.`
+            : `Detach ${child.name}? You'll need a new invite from someone else to reconnect.`;
+        if (await this.dialogs.confirm(message, 'Detach')) {
             this.userData.detachChild(child);
+        }
+    }
+    async removeMember(member: Member) {
+        const child = this.userData.child() || 'this log';
+        if (await this.dialogs.confirm(`Stop ${member.name} from seeing ${child}?`, 'Remove')) {
+            this.userData.removeMember(member.uid);
         }
     }
 }

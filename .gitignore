@@ -48,3 +48,8 @@ Thumbs.db
 *-debug.log
 /test-results
 /playwright-report
+
+# Exports from the member migration
+users.json
+auth-users.json
+members.json

@@ -1,28 +1,68 @@
-import { Component, inject } from '@angular/core';
-import { Auth } from './auth.service';
+import { Component, effect, inject, signal } from '@angular/core';
 import { UserData } from './user-data.service';
 
 @Component({
     selector: 'app-share-footer',
     template: `
-        <div class="main">
-            <div style="margin-top: 250px">User {{ auth.uid() }}</div>
-            <div>Family {{ userData.familyId() }}</div>
-            <div>
-                Share Child
-                <a target="_blank" [href]="userData.shareLink()" aria-label="Share child by email">
-                    <svg style="width: 24px; height: 24px" viewBox="0 0 24 24" aria-hidden="true">
-                        <path
-                            fill="currentColor"
-                            d="M18,16.08C17.24,16.08 16.56,16.38 16.04,16.85L8.91,12.7C8.96,12.47 9,12.24 9,12C9,11.76 8.96,11.53 8.91,11.3L15.96,7.19C16.5,7.69 17.21,8 18,8A3,3 0 0,0 21,5A3,3 0 0,0 18,2A3,3 0 0,0 15,5C15,5.24 15.04,5.47 15.09,5.7L8.04,9.81C7.5,9.31 6.79,9 6,9A3,3 0 0,0 3,12A3,3 0 0,0 6,15C6.79,15 7.5,14.69 8.04,14.19L15.16,18.34C15.11,18.55 15.08,18.77 15.08,19C15.08,20.61 16.39,21.91 18,21.91C19.61,21.91 20.92,20.61 20.92,19A2.92,2.92 0 0,0 18,16.08Z"
-                        />
-                    </svg>
-                </a>
-            </div>
-        </div>
+        <section class="main share-footer" aria-labelledby="share-heading">
+            <h2 id="share-heading">Share {{ userData.child() || 'this log' }}</h2>
+            @if (inviteLink(); as link) {
+                <label for="invite-link">Invite link (works once, for 7 days):</label>
+                <input id="invite-link" type="text" readonly [value]="link" (focus)="selectLink($event)" />
+                <button type="button" (click)="email(link)">Email the invite</button>
+            } @else {
+                <p>Invite someone else to see and add to this log.</p>
+                <button type="button" (click)="createInvite()">Create invite link</button>
+            }
+            @if (error()) {
+                <p role="alert">{{ error() }}</p>
+            }
+        </section>
+    `,
+    styles: `
+        .share-footer {
+            margin-top: 250px;
+        }
+        #invite-link {
+            width: 100%;
+            max-width: 500px;
+            margin: 8px 0;
+        }
     `,
 })
 export class ShareFooter {
-    auth = inject(Auth);
     userData = inject(UserData);
+
+    inviteLink = signal<string | null>(null);
+    error = signal<string | null>(null);
+
+    constructor() {
+        // An invite is for one family, so start over when switching children
+        effect(() => {
+            this.userData.familyId();
+            this.inviteLink.set(null);
+            this.error.set(null);
+        });
+    }
+
+    async createInvite() {
+        this.error.set(null);
+        try {
+            this.inviteLink.set(await this.userData.createInvite());
+        } catch {
+            this.error.set("Couldn't create an invite. Please try again.");
+        }
+    }
+
+    email(link: string) {
+        const child = this.userData.child() || 'our baby';
+        const subject = `Baby Log: Add ${child} to your account`;
+        const body = `Here is the link to add ${child} to your Baby Log account. It works once, for 7 days:\r\n\r\n${link}`;
+        // Navigate rather than render a mailto: link so the invite never appears in a link's href
+        location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    }
+
+    selectLink(event: FocusEvent) {
+        (event.target as HTMLInputElement).select();
+    }
 }

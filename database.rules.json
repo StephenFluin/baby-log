@@ -2,16 +2,103 @@
   "rules": {
     "users": {
       "$uid": {
-        ".read": "$uid === auth.uid",
-        ".write": "$uid === auth.uid"
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid"
       }
     },
     "families": {
       "$fid": {
-        ".read": "root.child('users/'+auth.uid).val() == $fid || root.child('users/'+auth.uid+'/families').hasChildren([$fid])",
-        ".write": "root.child('users/'+auth.uid).val() == $fid || root.child('users/'+auth.uid+'/families').hasChildren([$fid])",
+        ".read": "auth != null && data.child('members').child(auth.uid).exists()",
+        ".write": "auth != null && !data.exists() && newData.child('members').child(auth.uid).exists()",
+        "creationDate": {
+          ".validate": "newData.isString() && newData.val().length <= 40"
+        },
+        "members": {
+          "$uid": {
+            ".write": "auth != null && ((data.parent().child(auth.uid).exists() && !newData.exists()) || (auth.uid === $uid && !data.exists() && newData.child('invite').isString() && root.child('invites').child(newData.child('invite').val()).child('familyId').val() === $fid && root.child('invites').child(newData.child('invite').val()).child('expires').val() > now && !newData.parent().parent().parent().parent().child('invites').child(newData.child('invite').val()).exists()))",
+            ".validate": "newData.hasChildren(['name', 'joined']) && $uid === auth.uid",
+            "name": {
+              ".validate": "newData.isString() && newData.val().length <= 100"
+            },
+            "joined": {
+              ".validate": "newData.isNumber() && newData.val() <= now"
+            },
+            "invite": {
+              ".validate": "newData.isString()"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        },
         "events": {
-            ".indexOn": "date"
+          ".write": "auth != null && root.child('families').child($fid).child('members').child(auth.uid).exists()",
+          ".indexOn": "date",
+          "$eventId": {
+            ".validate": "newData.hasChild('date')",
+            "date": {
+              ".validate": "newData.isString() && newData.val().length <= 10"
+            },
+            "activities": {
+              "$index": {
+                ".validate": "newData.hasChildren(['activity', 'time'])",
+                "activity": {
+                  ".validate": "newData.isString() && newData.val().length <= 100"
+                },
+                "activityDetails": {
+                  ".validate": "newData.isString() && newData.val().length <= 200"
+                },
+                "notes": {
+                  ".validate": "newData.isString() && newData.val().length <= 2000"
+                },
+                "person": {
+                  ".validate": "newData.isString() && newData.val().length <= 100"
+                },
+                "time": {
+                  ".validate": "newData.isString() && newData.val().length <= 30"
+                }
+              }
+            }
+          }
+        },
+        "types": {
+          ".write": "auth != null && root.child('families').child($fid).child('members').child(auth.uid).exists()",
+          "$typeId": {
+            ".validate": "newData.hasChild('name')",
+            "name": {
+              ".validate": "newData.isString() && newData.val().length <= 100"
+            },
+            "details": {
+              "$index": {
+                ".validate": "newData.isString() && newData.val().length <= 200"
+              }
+            }
+          }
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "invites": {
+      "$token": {
+        ".read": "auth != null",
+        ".write": "auth != null && ((!data.exists() && root.child('families').child(newData.child('familyId').val()).child('members').child(auth.uid).exists()) || (data.exists() && !newData.exists() && (root.child('families').child(data.child('familyId').val()).child('members').child(auth.uid).exists() || newData.parent().parent().child('families').child(data.child('familyId').val()).child('members').child(auth.uid).child('invite').val() === $token)))",
+        ".validate": "newData.hasChildren(['familyId', 'createdBy', 'expires']) && $token.length >= 20",
+        "familyId": {
+          ".validate": "newData.isString()"
+        },
+        "childName": {
+          ".validate": "newData.isString() && newData.val().length <= 100"
+        },
+        "createdBy": {
+          ".validate": "newData.val() === auth.uid"
+        },
+        "expires": {
+          ".validate": "newData.isNumber() && newData.val() > now && newData.val() <= now + 2592000000"
+        },
+        "$other": {
+          ".validate": false
         }
       }
     }

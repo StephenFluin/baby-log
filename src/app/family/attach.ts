@@ -1,15 +1,21 @@
-import { Component, inject, input } from '@angular/core';
+import { Component, computed, inject, input, resource, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { UserData } from '../user-data.service';
+import { Invite, UserData } from '../user-data.service';
 
 @Component({
     template: `
         <div class="main">
-            <h2>Manage Family</h2>
-            <p>You've been invited to add a child to your account.</p>
-            <p>Name:{{ name() }}</p>
-            <p>Code: {{ code() }}</p>
-            <button (click)="attach()">Attach</button>
+            @if (!problem() && invite.value(); as details) {
+                <h2>Add {{ childName() }}</h2>
+                <p>You've been invited to add {{ childName() }} to your account.</p>
+                <button type="button" [disabled]="working()" (click)="attach(details)">
+                    Add {{ childName() }}
+                </button>
+            }
+            @if (problem(); as problem) {
+                <h2>Invite not available</h2>
+                <p role="alert">{{ problem }} Ask whoever sent it for a new invite.</p>
+            }
         </div>
     `,
 })
@@ -17,12 +23,45 @@ export class AttachComponent {
     private userData = inject(UserData);
     private router = inject(Router);
 
-    /** Who they are attaching to, from the route */
-    code = input.required<string>();
-    name = input.required<string>();
+    /** The invite token from the link */
+    token = input<string>(undefined, { alias: 'invite' });
+    /** Set for links from before invites existed */
+    legacy = input(false);
 
-    attach() {
-        this.userData.connectNewFamily(this.code(), this.name());
-        this.router.navigate(['']);
+    invite = resource({
+        params: () => this.token(),
+        loader: ({ params }) => this.userData.getInvite(params),
+    });
+    childName = computed(() => this.invite.value()?.childName || 'a child');
+
+    working = signal(false);
+    private error = signal<string | null>(null);
+    problem = computed(() => {
+        if (this.legacy()) {
+            return 'This link is from an older version of Baby Log and no longer works.';
+        }
+        if (this.error()) {
+            return this.error();
+        }
+        if (this.invite.isLoading()) {
+            return null;
+        }
+        const invite = this.invite.value();
+        if (!invite || invite.expires < Date.now()) {
+            return 'This invite has expired or was already used.';
+        }
+        return null;
+    });
+
+    async attach(details: Invite) {
+        this.working.set(true);
+        try {
+            await this.userData.acceptInvite(this.token()!, details);
+            this.router.navigate(['']);
+        } catch {
+            this.error.set('This invite has expired or was already used.');
+        } finally {
+            this.working.set(false);
+        }
     }
 }

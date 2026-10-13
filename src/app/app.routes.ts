@@ -23,5 +23,7 @@ export const routes: Routes = [
         loadComponent: () => import('./types/manage-types').then((m) => m.ManageTypes),
     },
     { path: 'family', component: FamilyComponent },
-    { path: 'attach/:code/:name', component: AttachComponent },
+    { path: 'attach/:invite', component: AttachComponent },
+    // Links from before invites existed
+    { path: 'attach/:code/:name', component: AttachComponent, data: { legacy: true } },
 ];
