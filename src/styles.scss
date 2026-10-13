@@ -200,6 +200,10 @@ ngx-mat-timepicker-content {
     .mat-toolbar-row, .mat-toolbar-single-row {
         height:150px;
     }
+    // Always show the date hint (with the change-day buttons), not just while the hour has focus
+    .timepicker-dial__hint-container--hidden {
+        visibility: visible !important;
+    }
 }
 
 // Dark Theme
