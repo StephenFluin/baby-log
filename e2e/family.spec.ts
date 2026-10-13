@@ -22,8 +22,7 @@ test('adds and detaches children', async ({ page }) => {
     await expect(page.getByLabel('Name of First')).toBeVisible();
 });
 
-// TODO: the upload works when probed by hand, but this test still doesn't see the uploaded name
-test.fixme('keeps names on new devices and uploads names saved by older versions', async ({ page }) => {
+test('keeps names on new devices and uploads names saved by older versions', async ({ page }) => {
     await signIn(page, 'Traveler');
     await openMenu(page, 'Manage Family');
     await page.getByRole('button', { name: 'New' }).click();

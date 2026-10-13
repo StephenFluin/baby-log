@@ -159,12 +159,14 @@ export class UserData {
                 onValue(
                     ref(this.db, `families/${familyId}/name`),
                     (snapshot) => {
-                        const name: string | null = snapshot.val();
+                        let name: string | null = snapshot.val();
                         // Older versions only saved names on the device, so upload any the log doesn't have yet
                         const localName = this.localNames[familyId];
+                        let upload = false;
                         if (localName) {
                             if (!name) {
-                                set(snapshot.ref, localName.slice(0, 100));
+                                name = localName.slice(0, 100);
+                                upload = true;
                             }
                             delete this.localNames[familyId];
                             this.saveLocalNames();
@@ -173,6 +175,10 @@ export class UserData {
                             const { [familyId]: _, ...others } = names;
                             return name ? { ...others, [familyId]: name } : others;
                         });
+                        // Upload last: the write fires this callback again before set() returns
+                        if (upload) {
+                            set(snapshot.ref, name);
+                        }
                     },
                     (error) => console.error('Unable to load name', error)
                 )
