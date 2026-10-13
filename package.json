@@ -2,11 +2,15 @@
   "name": "baby-log",
   "version": "0.0.0",
   "scripts": {
+    "preserve": "node scripts/update-build-info.ts",
     "serve": "ng serve",
+    "prebuild": "node scripts/update-build-info.ts",
     "build": "ng build",
     "deploy": "npm run build && firebase deploy --only hosting:baby-log,database",
+    "pretest": "node scripts/update-build-info.ts",
     "test": "ng test --watch=false",
     "test:rules": "firebase emulators:exec --only database --project demo-baby-log \"vitest run --config tests/vitest.config.mts\"",
+    "pree2e": "node scripts/update-build-info.ts",
     "e2e": "firebase emulators:exec --only auth,database --project demo-baby-log \"playwright test\""
   },
   "private": true,

@@ -4,6 +4,7 @@ import { confirmDialog, openMenu, signIn } from './helpers';
 test('logs a day of activities', async ({ page }) => {
     await signIn(page, 'Logger');
     await expect(page.getByText('We created this log for you')).toBeVisible();
+    await expect(page.getByRole('contentinfo')).toContainText(/Build: \w{3} \d{1,2}, \d{4}/);
 
     // Name the baby (stored only on this device)
     await page.getByLabel("Baby's name").fill('Ada');
