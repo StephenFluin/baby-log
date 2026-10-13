@@ -2,7 +2,6 @@ import { Component, OnDestroy } from '@angular/core';
 import { UserData } from '../user-data.service';
 import { takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
-import { AngularFireDatabase } from '@angular/fire/compat/database';
 
 export const DEFAULT_TYPES = {
     feed: ['left', 'right', 'bottle'],
@@ -25,7 +24,7 @@ export class ManageTypes implements OnDestroy {
             if (types.length === 0) {
                 // No types found, let's insert the defaults
                 for (const key of Object.keys(DEFAULT_TYPES)) {
-                    this.userData.types.push({ name: key, details: DEFAULT_TYPES[key] });
+                    this.userData.addType({ name: key, details: DEFAULT_TYPES[key] });
                 }
             }
         });
@@ -50,10 +49,10 @@ export class ManageTypes implements OnDestroy {
     addType(newType) {
         const type = newType.value;
         console.log(type);
-        this.userData.types.push({ name: type, details: [] });
+        this.userData.addType({ name: type, details: [] });
         newType.value = '';
     }
     deleteType(typeId: string) {
-        this.userData.types.remove(typeId);
+        this.userData.removeType(typeId);
     }
 }

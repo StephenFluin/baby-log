@@ -1,25 +1,32 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 
-import { AngularFireAuth } from '@angular/fire/compat/auth';
-import firebase from 'firebase/compat/app';
+import { GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut, User } from 'firebase/auth';
 import { map, shareReplay, startWith } from 'rxjs/operators';
 
 import { shareAndCache } from 'http-operators';
 import { Observable } from 'rxjs';
+import { FIREBASE_AUTH } from './firebase';
 
 @Injectable({
     providedIn: 'root',
 })
 export class Auth {
+    private afAuth = inject(FIREBASE_AUTH);
+    private authState = new Observable<User | null>((subscriber) =>
+        onAuthStateChanged(
+            this.afAuth,
+            (user) => subscriber.next(user),
+            (error) => subscriber.error(error)
+        )
+    );
+
     uid: Observable<any>;
-    state: Observable<firebase.User>;
+    state: Observable<User>;
 
 
     latestUid = null;
-    constructor(private afAuth: AngularFireAuth) {
-        console.log('afAuth is ', afAuth);
-
-        this.uid = this.afAuth.authState.pipe(
+    constructor() {
+        this.uid = this.authState.pipe(
             startWith(localStorage['savedCreds']),
             map(state => {
                 if (state) {
@@ -32,16 +39,16 @@ export class Auth {
             shareReplay(1),
         );
         this.uid.subscribe(next => (this.latestUid = next));
-        this.state = this.afAuth.authState.pipe(shareAndCache('authState'));
+        this.state = this.authState.pipe(shareAndCache('authState'));
     }
     login() {
-        this.afAuth.signInWithPopup(new firebase.auth.GoogleAuthProvider())
+        signInWithPopup(this.afAuth, new GoogleAuthProvider())
         .then(credential => {
             localStorage['savedCreds'] = credential.user.uid;
         });
     }
     logout() {
-        this.afAuth.signOut();
+        signOut(this.afAuth);
         localStorage.removeItem('savedCreds');
     }
 }

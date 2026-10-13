@@ -1,6 +1,16 @@
-import { Injectable } from '@angular/core';
-import { AngularFireDatabase, AngularFireList } from '@angular/fire/compat/database';
+import { inject, Injectable } from '@angular/core';
+import {
+    limitToLast,
+    orderByChild,
+    push,
+    query,
+    ref,
+    remove,
+    set,
+    update,
+} from 'firebase/database';
 import { Auth } from './auth.service';
+import { FIREBASE_DB, listChanges, objectVal } from './firebase';
 import { switchMap, tap, map, shareReplay } from 'rxjs/operators';
 import { Observable, BehaviorSubject, EMPTY } from 'rxjs';
 import { shareAndCache } from 'http-operators';
@@ -39,8 +49,6 @@ export class UserData {
      * Synchronous local copy of data that we can modify
      */
     data: Data;
-    /** Modifiable version of the AngularFire list */
-    events: AngularFireList<Event>;
     /** Temporary storage for events source, (basically which family the events are stored in)  */
     eventSource = new BehaviorSubject<Observable<{ key: string; value: Event }[]>>(EMPTY);
     eventList: Observable<{ key: string; value: Event }[]> = this.eventSource.pipe(
@@ -50,8 +58,6 @@ export class UserData {
     );
     eventHistory: Observable<Event[]>;
 
-    /** Modifiable version of the AngularFire list */
-    types: AngularFireList<ActivityType>;
     /** Temporary storage for type source, (basically which family the events are stored in) */
     typeSource = new BehaviorSubject<Observable<{ key: string; value: ActivityType }[]>>(EMPTY);
     typeList: Observable<{ key: string; value: ActivityType }[]> = this.typeSource.pipe(
@@ -59,7 +65,9 @@ export class UserData {
         shareAndCache('types')
     );
 
-    constructor(private auth: Auth, private db: AngularFireDatabase) {
+    private db = inject(FIREBASE_DB);
+
+    constructor(private auth: Auth) {
         // Get the user's families from the DB / local storage and save the data synchronously
         this.auth.uid
             .pipe(
@@ -69,9 +77,9 @@ export class UserData {
                     if (!uid) {
                         return EMPTY;
                     }
-                    return this.db
-                        .object<string | { families: { [key: string]: boolean } }>(`users/${uid}`)
-                        .valueChanges();
+                    return objectVal<string | { families: { [key: string]: boolean } }>(
+                        ref(this.db, `users/${uid}`)
+                    );
                 }),
                 tap((familyIdOrMap) => {
                     if (typeof familyIdOrMap === 'string') {
@@ -106,7 +114,7 @@ export class UserData {
         for (const family of this.connectedFamilies) {
             newFamilyPermissions[family.id] = true;
         }
-        await this.db.object(`/users/${this.auth.latestUid}/families`).set(newFamilyPermissions);
+        await set(ref(this.db, `/users/${this.auth.latestUid}/families`), newFamilyPermissions);
         console.log(
             `/users/${this.auth.latestUid}/families`,
             'updated to say',
@@ -138,8 +146,8 @@ export class UserData {
         console.log('Creating a brand new family!');
         const key = newPushId();
         console.log('using key', key);
-        await this.db.object(`users/${this.auth.latestUid}/families/${key}`).set(true);
-        await this.db.object(`families/${key}/`).set({ creationDate: localeIsoString(new Date()) });
+        await set(ref(this.db, `users/${this.auth.latestUid}/families/${key}`), true);
+        await set(ref(this.db, `families/${key}/`), { creationDate: localeIsoString(new Date()) });
         console.log('family created (' + key + '), permissions should be good to go!');
         return key;
     }
@@ -159,26 +167,17 @@ export class UserData {
         localStorage['lastFamilyId'] = familyId;
         this.familyId = familyId;
 
-        // Save firebase objects so we can add/remove from lists
-        this.events = this.db.list(`families/${familyId}/events`, (ref) =>
-            ref.orderByChild('date').limitToLast(5)
+        const eventsRef = ref(this.db, `families/${familyId}/events`);
+        this.eventHistory = listChanges<Event>(query(eventsRef, orderByChild('date'))).pipe(
+            map((list) => list.map((item) => item.value).reverse())
         );
-        this.types = this.db.list(`families/${familyId}/types`);
-
-        this.eventHistory = this.db
-            .list<Event>(`families/${familyId}/events`, (ref) => ref.orderByChild('date'))
-            .valueChanges()
-            .pipe(map((list) => list.reverse()));
 
         // Save a new event source based on the current family
         this.eventSource.next(
-            this.events.snapshotChanges().pipe(
-                map((actions) =>
-                    actions
-                        .map((a) => {
-                            const data = a.payload.val() as Event;
-                            const key = a.payload.key;
-                            const value = { key: key, value: data };
+            listChanges<Event>(query(eventsRef, orderByChild('date'), limitToLast(5))).pipe(
+                map((items) =>
+                    items
+                        .map((value) => {
                             if (!value.value.activities) {
                                 value.value.activities = [];
                             }
@@ -197,30 +196,25 @@ export class UserData {
             )
         );
         this.typeSource.next(
-            this.types.snapshotChanges().pipe(
-                map((actions) =>
-                    actions.map((a) => {
-                        return { key: a.payload.key, value: a.payload.val() };
-                    })
-                ),
+            listChanges<ActivityType>(ref(this.db, `families/${familyId}/types`)).pipe(
                 shareReplay(1)
             )
         );
     }
 
     saveEvent(key: string, data: Event) {
-        this.db.object(`families/${this.familyId}/events/${key}`).update(data);
+        update(ref(this.db, `families/${this.familyId}/events/${key}`), data);
     }
 
     createEvent() {
-        this.events.push({
+        push(ref(this.db, `families/${this.familyId}/events`), {
             date: localeIsoString(new Date()).substr(0, 10),
             activities: [],
         });
     }
     deleteEvent(key) {
         if (confirm('Are you sure you want to delete this day?')) {
-            this.events.remove(key);
+            remove(ref(this.db, `families/${this.familyId}/events/${key}`));
         }
     }
     addActivity(
@@ -284,16 +278,22 @@ export class UserData {
     }
 
     join(uid, familyId) {
-        this.db.object(`users/${uid}`).set(familyId);
+        set(ref(this.db, `users/${uid}`), familyId);
         window.location.reload();
+    }
+
+    addType(type: ActivityType) {
+        push(ref(this.db, `families/${this.familyId}/types`), type);
+    }
+
+    removeType(typeId: string) {
+        remove(ref(this.db, `families/${this.familyId}/types/${typeId}`));
     }
 
     updateTypeDetail(typeId: string, newDetail: string[]) {
         const path = `families/${this.familyId}/types/${typeId}/details`;
         console.log('updating', path, 'with', newDetail);
-        this.db
-            .object<string[]>(path)
-            .set(newDetail)
+        set(ref(this.db, path), newDetail)
             .then(() => console.log('done updating details'))
             .catch((err) => console.log(err, 'when updating details'));
     }
