@@ -91,7 +91,7 @@ export class FamilyComponent {
             )
         ) {
             const index = this.userData.connectedFamilies.indexOf(child);
-            this.userData.connectedFamilies.splice(index);
+            this.userData.connectedFamilies.splice(index, 1);
             this.userData.saveConnectedFamilies();
 
             // Make sure we don't keep a deleted child selected
