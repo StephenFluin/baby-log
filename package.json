@@ -21,8 +21,7 @@
     "firebase": "^13.0.0",
     "ngx-mat-timepicker": "^22.1.0",
     "rxjs": "^7.8.1",
-    "tslib": "^2.0.0",
-    "zone.js": "~0.15.1"
+    "tslib": "^2.0.0"
   },
   "devDependencies": {
     "@angular/build": "^22.2.2",
