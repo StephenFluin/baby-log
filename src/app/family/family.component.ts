@@ -36,7 +36,7 @@ import { ConnectedFamily, UserData } from '../user-data.service';
             @if (!showNew()) {
                 <button (click)="showNew.set(true)">New</button>
             } @else {
-                <form (submit)="$event.preventDefault(); create(nameInput.value, codeInput?.value)">
+                <form (submit)="$event.preventDefault(); create(nameInput.value, code())">
                     <h3>New</h3>
                     <table>
                         <tr>
@@ -51,7 +51,7 @@ import { ConnectedFamily, UserData } from '../user-data.service';
                         } @else {
                             <tr>
                                 <td>Shared Child Code</td>
-                                <td><input type="text" #codeInput /></td>
+                                <td><input type="text" (input)="code.set(codeInput.value)" #codeInput /></td>
                                 <td colspan="2">
                                     Were you given a code from the bottom of an existing child? Feel
                                     free to leave blank to create a new child.
@@ -70,8 +70,10 @@ export class FamilyComponent {
 
     showNew = signal(false);
     showCode = signal(false);
+    /** Family ID of an existing child to attach to */
+    code = signal('');
 
-    create(name: string, code?: string) {
+    create(name: string, code: string) {
         this.userData.connectNewFamily(code, name);
     }
     delete(child: ConnectedFamily) {
