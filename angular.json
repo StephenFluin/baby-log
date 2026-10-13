@@ -53,6 +53,15 @@
               "extractLicenses": false,
               "sourceMap": true,
               "namedChunks": true
+            },
+            "emulators": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "namedChunks": true,
+              "define": {
+                "USE_FIREBASE_EMULATORS": "true"
+              }
             }
           },
           "defaultConfiguration": "production"
@@ -65,9 +74,20 @@
             },
             "development": {
               "buildTarget": "baby-log:build:development"
+            },
+            "emulators": {
+              "buildTarget": "baby-log:build:emulators"
             }
           },
           "defaultConfiguration": "development"
+        },
+        "test": {
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "tsConfig": "src/tsconfig.spec.json",
+            "runner": "vitest",
+            "buildTarget": "::development"
+          }
         }
       }
     }

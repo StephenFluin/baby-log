@@ -43,3 +43,8 @@ testem.log
 # System Files
 .DS_Store
 Thumbs.db
+
+# Firebase emulators and Playwright
+*-debug.log
+/test-results
+/playwright-report
