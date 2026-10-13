@@ -13,6 +13,10 @@
         "creationDate": {
           ".validate": "newData.isString() && newData.val().length <= 40"
         },
+        "name": {
+          ".write": "auth != null && root.child('families').child($fid).child('members').child(auth.uid).exists()",
+          ".validate": "newData.isString() && newData.val().length <= 100"
+        },
         "members": {
           "$uid": {
             ".write": "auth != null && ((data.parent().child(auth.uid).exists() && !newData.exists()) || (auth.uid === $uid && !data.exists() && newData.child('invite').isString() && root.child('invites').child(newData.child('invite').val()).child('familyId').val() === $fid && root.child('invites').child(newData.child('invite').val()).child('expires').val() > now && !newData.parent().parent().parent().parent().child('invites').child(newData.child('invite').val()).exists()))",

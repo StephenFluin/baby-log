@@ -40,7 +40,7 @@ export interface ConnectedFamily {
     name: string;
 }
 export interface ChildOption extends ConnectedFamily {
-    /** Whether the user named this child on this device */
+    /** Whether anyone has named this child */
     named: boolean;
 }
 export interface Member {
@@ -66,20 +66,18 @@ export class UserData {
     private db = inject(FIREBASE_DB);
 
     readonly familyId = signal<string | null>(null);
-    readonly child = signal<string | null>(null);
-    /** Names are only EVER stored client side (per user) for privacy reasons */
-    readonly connectedFamilies = signal<ConnectedFamily[]>([]);
     /** Families the user has access to on the server */
     private serverFamilyIds = signal<string[]>([]);
-    /**
-     * Every family the user can switch to, named if they named it on this device.
-     * Names are per device, so a new device starts with unnamed children.
-     */
+    /** Each family's child's name, shared by everyone with access (families/$fid/name) */
+    private familyNames = signal<Record<string, string>>({});
+    /** Names older versions saved on this device, waiting to be uploaded */
+    private localNames: Record<string, string> = {};
+    /** Every family the user can switch to */
     readonly families = computed<ChildOption[]>(() => {
-        const names = new Map(this.connectedFamilies().map((family) => [family.id, family.name]));
+        const names = this.familyNames();
         let unnamed = 0;
         return this.serverFamilyIds().map((id) => {
-            const name = names.get(id);
+            const name = names[id];
             return name ? { id, name, named: true } : { id, name: `Unnamed child ${++unnamed}`, named: false };
         });
     });
@@ -87,6 +85,11 @@ export class UserData {
     readonly currentFamily = computed(() =>
         this.families().find((family) => family.id === this.familyId())
     );
+    /** The current child's name, if they have one */
+    readonly child = computed(() => {
+        const current = this.currentFamily();
+        return current?.named ? current.name : null;
+    });
 
     /** The 5 most recent days for the current family, newest first */
     readonly events = signal<{ key: string; value: Event }[] | null>(null);
@@ -124,7 +127,7 @@ export class UserData {
                 return;
             }
             this.adoptUnscopedStorage(uid);
-            this.connectedFamilies.set(JSON.parse(this.userStorage('connectedFamilies') || '[]'));
+            this.localNames = this.readLocalNames();
             onCleanup(
                 onValue(
                     ref(this.db, `users/${uid}`),
@@ -147,6 +150,34 @@ export class UserData {
                     (error) => console.error('Unable to load families', error)
                 )
             );
+        });
+
+        // Keep every family's name in sync, so the child switcher can list them
+        effect((onCleanup) => {
+            const familyIds = this.serverFamilyIds();
+            const unsubscribes = familyIds.map((familyId) =>
+                onValue(
+                    ref(this.db, `families/${familyId}/name`),
+                    (snapshot) => {
+                        const name: string | null = snapshot.val();
+                        // Older versions only saved names on the device, so upload any the log doesn't have yet
+                        const localName = this.localNames[familyId];
+                        if (localName) {
+                            if (!name) {
+                                set(snapshot.ref, localName.slice(0, 100));
+                            }
+                            delete this.localNames[familyId];
+                            this.saveLocalNames();
+                        }
+                        this.familyNames.update((names) => {
+                            const { [familyId]: _, ...others } = names;
+                            return name ? { ...others, [familyId]: name } : others;
+                        });
+                    },
+                    (error) => console.error('Unable to load name', error)
+                )
+            );
+            onCleanup(() => unsubscribes.forEach((unsubscribe) => unsubscribe()));
         });
 
         // Keep events and types in sync with the current family
@@ -220,13 +251,11 @@ export class UserData {
      */
     async connectNewFamily(id: string | null, name: string) {
         if (!id) {
-            id = await this.createMissingFamily();
+            id = await this.createMissingFamily(name);
+        } else {
+            await this.renameChild(id, name);
         }
-        this.connectedFamilies.update((families) => [...families, { id, name }]);
         await this.grantFamilyAccess(id);
-
-        // Then update UI and render
-        this.saveConnectedFamilies();
         this.switchToFamilyId(id);
     }
 
@@ -254,11 +283,6 @@ export class UserData {
         }
         // Only list the family once the user is a member, since listing it switches to it
         await this.grantFamilyAccess(familyId);
-        if (!this.connectedFamilies().some((family) => family.id === familyId)) {
-            const name = invite.childName || 'Shared child';
-            this.connectedFamilies.update((families) => [...families, { id: familyId, name }]);
-            this.saveConnectedFamilies();
-        }
         await this.switchToFamilyId(familyId);
     }
 
@@ -313,22 +337,14 @@ export class UserData {
         this.renameChild(this.familyId()!, name);
     }
 
+    /** Name (or with an empty name, unname) a child for everyone who can see their log */
     renameChild(childId: string, name: string) {
-        name = name.trim();
-        this.connectedFamilies.update((families) => [
-            ...families.filter((family) => family.id !== childId),
-            ...(name ? [{ id: childId, name }] : []),
-        ]);
-        this.saveConnectedFamilies();
-        if (this.familyId() === childId) {
-            this.child.set(name || null);
-        }
+        name = name.trim().slice(0, 100);
+        const nameRef = ref(this.db, `families/${childId}/name`);
+        return name ? set(nameRef, name) : remove(nameRef);
     }
 
     async detachChild(child: ConnectedFamily) {
-        this.connectedFamilies.update((families) => families.filter((family) => family.id !== child.id));
-        this.saveConnectedFamilies();
-
         // Make sure we don't keep a deleted child selected
         if (this.familyId() === child.id) {
             await this.switchToFamilyId(
@@ -338,13 +354,6 @@ export class UserData {
         // Then give up this user's access to the child's log
         await remove(ref(this.db, `families/${child.id}/members/${this.auth.uid()}`));
         await remove(ref(this.db, `users/${this.auth.uid()}/families/${child.id}`));
-    }
-
-    /**
-     * Save changes to local storage
-     */
-    saveConnectedFamilies() {
-        this.setUserStorage('connectedFamilies', JSON.stringify(this.connectedFamilies()));
     }
 
     /**
@@ -362,8 +371,7 @@ export class UserData {
     private resetState() {
         this.serverFamilyIds.set([]);
         this.familyId.set(null);
-        this.child.set(null);
-        this.connectedFamilies.set([]);
+        this.familyNames.set({});
         this.members.set([]);
         this.events.set(null);
         this.types.set(null);
@@ -378,6 +386,28 @@ export class UserData {
     private setUserStorage(key: string, value: string) {
         localStorage.setItem(`${key}:${this.auth.uid()}`, value);
     }
+    /** Names saved on this device by older versions */
+    private readLocalNames(): Record<string, string> {
+        const names: Record<string, string> = {};
+        try {
+            const families: ConnectedFamily[] = JSON.parse(this.userStorage('connectedFamilies') || '[]');
+            for (const family of families) {
+                if (family?.id && family.name) {
+                    names[family.id] = family.name;
+                }
+            }
+        } catch {}
+        return names;
+    }
+    private saveLocalNames() {
+        const families = Object.entries(this.localNames).map(([id, name]) => ({ id, name }));
+        if (families.length) {
+            this.setUserStorage('connectedFamilies', JSON.stringify(families));
+        } else {
+            localStorage.removeItem(`connectedFamilies:${this.auth.uid()}`);
+        }
+    }
+
     /** Older versions stored child names without a user, so give them to the first user to sign in */
     private adoptUnscopedStorage(uid: string) {
         for (const key of ['connectedFamilies', 'lastFamilyId']) {
@@ -394,10 +424,11 @@ export class UserData {
      * This can happen either as part of initial setup (when the user is being created)
      * Or when a user is adding a child to their profile.
      */
-    async createMissingFamily() {
+    async createMissingFamily(childName?: string) {
         const key = push(ref(this.db, 'families')).key!;
         await set(ref(this.db, `families/${key}`), {
             creationDate: localeIsoString(new Date()),
+            ...(childName?.trim() ? { name: childName.trim().slice(0, 100) } : {}),
             members: {
                 [this.auth.uid()!]: { name: this.memberName(), joined: serverTimestamp() },
             },
@@ -407,9 +438,6 @@ export class UserData {
         return key;
     }
     async switchToFamilyId(familyId: string | null) {
-        // Let's see if the user gave this person a name!
-        const child = this.connectedFamilies().find((family) => family.id === familyId);
-        this.child.set(child?.name ?? null);
         // If user doesn't have a family, let's give them one!
         if (!familyId) {
             familyId = await this.createMissingFamily();

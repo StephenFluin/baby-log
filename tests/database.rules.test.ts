@@ -73,6 +73,18 @@ describe('families', () => {
         await assertFails(set(ref(db('mallory'), 'families/fam'), { members: { mallory: member('M') } }));
     });
 
+    it("lets members name the child, for everyone who can see the log", async () => {
+        await assertSucceeds(set(ref(db('alice'), 'families/fam/name'), 'Ada'));
+        await assertFails(set(ref(db('alice'), 'families/fam/name'), 'x'.repeat(101)));
+        await assertFails(set(ref(db('mallory'), 'families/fam/name'), 'Mallory'));
+        await assertSucceeds(
+            set(ref(db('bob'), 'families/named'), {
+                name: 'Bo',
+                members: { bob: member('Bob') },
+            })
+        );
+    });
+
     it('validates log entries', async () => {
         await assertFails(
             set(ref(db('alice'), 'families/fam/events/e1/activities/0/notes'), 'x'.repeat(2001))

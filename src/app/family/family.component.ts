@@ -8,7 +8,7 @@ import { ChildOption, Member, UserData } from '../user-data.service';
     template: `
         <div class="main">
             <h2>Manage Family</h2>
-            <p>Names are only saved on this device.</p>
+            <p>Names are shared with everyone who can see the child's log.</p>
             <table style="max-width: 500px;">
                 @for (child of userData.families(); track child.id) {
                     <tr>
