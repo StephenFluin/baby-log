@@ -34,17 +34,11 @@
               "src/styles.scss"
             ],
             "scripts": [],
-            "extractLicenses": false,
-            "sourceMap": true,
-            "optimization": false,
-            "namedChunks": true,
             "browser": "src/main.ts"
           },
           "configurations": {
             "production": {
-              "optimization": true,
               "outputHashing": "all",
-              "extractLicenses": true,
               "budgets": [
                 {
                   "type": "initial",
@@ -57,20 +51,27 @@
                 }
               ],
               "localize": false
+            },
+            "development": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "namedChunks": true
             }
           },
-          "defaultConfiguration": ""
+          "defaultConfiguration": "production"
         },
         "serve": {
           "builder": "@angular/build:dev-server",
-          "options": {
-            "buildTarget": "baby-log:build"
-          },
           "configurations": {
             "production": {
               "buildTarget": "baby-log:build:production"
+            },
+            "development": {
+              "buildTarget": "baby-log:build:development"
             }
-          }
+          },
+          "defaultConfiguration": "development"
         },
         "extract-i18n": {
           "builder": "@angular/build:extract-i18n",

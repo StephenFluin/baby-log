@@ -1,19 +1,26 @@
 # BabyLog
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 7.1.0.
+A small Angular app for logging a baby's day (feeds, sleep, diapers, …), backed by the Firebase
+Realtime Database and Google sign-in. Children's names are only stored locally on each device.
+
+## Requirements
+
+Node 24 (see `.nvmrc`), or Node 22.22.3+.
+
+```bash
+npm ci
+```
 
 ## Development server
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
-
-## Code scaffolding
-
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+Run `npm run serve` for a dev server. Navigate to `http://localhost:4200/`. The app will
+automatically reload if you change any of the source files.
 
 ## Build
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory. Use the `--prod` flag for a production build.
+Run `npm run build` to make a production build in `dist/baby-log/browser`.
 
-## Further help
+## Deploy
 
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI README](https://github.com/angular/angular-cli/blob/master/README.md).
+Run `npm run deploy` to build and deploy to Firebase Hosting. Database rules in
+`database.rules.json` are deployed separately with `npx firebase deploy --only database`.
