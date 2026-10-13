@@ -5,6 +5,14 @@ async function createInvite(page: Page) {
     await page.getByRole('button', { name: 'Create invite link' }).click();
     const link = await page.getByLabel('Invite link').inputValue();
     expect(link).toMatch(/\/attach\/[\w-]{20,}$/);
+
+    // Every way of sending the invite carries the same link
+    await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+    await page.getByRole('button', { name: 'Copy link' }).click();
+    await expect(page.getByRole('button', { name: 'Copied!' })).toBeVisible();
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(link);
+    const mailto = await page.getByRole('link', { name: 'Email the invite' }).getAttribute('href');
+    expect(decodeURIComponent(mailto!)).toContain(link);
     return new URL(link).pathname;
 }
 
