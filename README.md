@@ -52,3 +52,43 @@ npm run deploy
 Run the last two steps back to back so new families get created under the new rules. Delete the
 exported JSON files afterwards, since they contain users' data. Share links sent before this
 change stop working; the app tells people to ask for a new invite.
+
+## Firebase project security settings
+
+These live in the Firebase and Google Cloud consoles rather than this repo.
+
+### App Check
+
+1. In the Firebase console, open **App Check**, register the web app with **reCAPTCHA
+   Enterprise**, and create a site key for `baby.fluin.io`, `baby-log-7307f.web.app`, and
+   `baby-log-7307f.firebaseapp.com`.
+2. Put the site key in `APP_CHECK_SITE_KEY` in `src/app/firebase.ts` and deploy.
+3. For local development against the real project, run `npm run serve`, copy the debug token the
+   browser console prints, and add it under **App Check → Apps → Manage debug tokens**. (The
+   emulators don't use App Check.)
+4. Watch the **App Check** metrics for a few days until nearly all requests are verified, then
+   **Enforce** it for Realtime Database and Authentication.
+
+### Browser API key restrictions
+
+The API key in `src/app/firebase.ts` is public by design, but it should only work from the app's
+own sites and only for the APIs the app uses:
+
+```bash
+gcloud services api-keys list --project baby-log-7307f
+gcloud services api-keys update KEY_ID --project baby-log-7307f \
+  --allowed-referrers="https://baby.fluin.io/*,https://baby-log-7307f.web.app/*,https://baby-log-7307f.firebaseapp.com/*,http://localhost:4200/*" \
+  --api-target=service=identitytoolkit.googleapis.com \
+  --api-target=service=securetoken.googleapis.com \
+  --api-target=service=firebaseappcheck.googleapis.com \
+  --api-target=service=firebaseinstallations.googleapis.com
+```
+
+Use the key ID whose key string matches the `apiKey` in `src/app/firebase.ts`, and test sign-in
+right afterwards.
+
+### Google Analytics
+
+The app sends page views itself with scrubbed URLs, so in the GA4 web stream's **Enhanced
+measurement** settings turn off **Page changes based on browser history events** (it can report
+real URLs and double-count page views) and **Outbound clicks**.

@@ -1,5 +1,6 @@
-import { inject, InjectionToken } from '@angular/core';
+import { inject, InjectionToken, isDevMode } from '@angular/core';
 import { FirebaseApp, initializeApp } from 'firebase/app';
+import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
 import { Auth, connectAuthEmulator, getAuth } from 'firebase/auth';
 import { connectDatabaseEmulator, DataSnapshot, Database, getDatabase } from 'firebase/database';
 
@@ -7,17 +8,35 @@ import { connectDatabaseEmulator, DataSnapshot, Database, getDatabase } from 'fi
 declare const USE_FIREBASE_EMULATORS: boolean | undefined;
 const useEmulators = typeof USE_FIREBASE_EMULATORS !== 'undefined' && USE_FIREBASE_EMULATORS;
 
+/**
+ * reCAPTCHA Enterprise site key for App Check (see README). App Check is off until this is set.
+ * Site keys are public, so it's fine to commit.
+ */
+const APP_CHECK_SITE_KEY = '';
+
 export const FIREBASE_APP = new InjectionToken<FirebaseApp>('FIREBASE_APP', {
     providedIn: 'root',
-    factory: () =>
-        initializeApp({
+    factory: () => {
+        const app = initializeApp({
             apiKey: 'AIzaSyCl1gfM_tPg777Gfu_zOGWUnnMN4ed0JuI',
             authDomain: 'baby-log-7307f.firebaseapp.com',
             databaseURL: 'https://baby-log-7307f.firebaseio.com',
             projectId: 'baby-log-7307f',
             storageBucket: 'baby-log-7307f.appspot.com',
             messagingSenderId: '121560255493',
-        }),
+        });
+        if (APP_CHECK_SITE_KEY && !useEmulators) {
+            if (isDevMode()) {
+                // Logs a debug token to register in the Firebase console for local development
+                (self as { FIREBASE_APPCHECK_DEBUG_TOKEN?: boolean }).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+            }
+            initializeAppCheck(app, {
+                provider: new ReCaptchaEnterpriseProvider(APP_CHECK_SITE_KEY),
+                isTokenAutoRefreshEnabled: true,
+            });
+        }
+        return app;
+    },
 });
 
 export const FIREBASE_AUTH = new InjectionToken<Auth>('FIREBASE_AUTH', {
