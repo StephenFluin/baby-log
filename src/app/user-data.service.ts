@@ -39,6 +39,10 @@ export interface ConnectedFamily {
     id: string;
     name: string;
 }
+export interface ChildOption extends ConnectedFamily {
+    /** Whether the user named this child on this device */
+    named: boolean;
+}
 export interface Member {
     uid: string;
     name: string;
@@ -66,7 +70,23 @@ export class UserData {
     /** Names are only EVER stored client side (per user) for privacy reasons */
     readonly connectedFamilies = signal<ConnectedFamily[]>([]);
     /** Families the user has access to on the server */
-    private serverFamilyIds: string[] = [];
+    private serverFamilyIds = signal<string[]>([]);
+    /**
+     * Every family the user can switch to, named if they named it on this device.
+     * Names are per device, so a new device starts with unnamed children.
+     */
+    readonly families = computed<ChildOption[]>(() => {
+        const names = new Map(this.connectedFamilies().map((family) => [family.id, family.name]));
+        let unnamed = 0;
+        return this.serverFamilyIds().map((id) => {
+            const name = names.get(id);
+            return name ? { id, name, named: true } : { id, name: `Unnamed child ${++unnamed}`, named: false };
+        });
+    });
+    /** The family currently being viewed */
+    readonly currentFamily = computed(() =>
+        this.families().find((family) => family.id === this.familyId())
+    );
 
     /** The 5 most recent days for the current family, newest first */
     readonly events = signal<{ key: string; value: Event }[] | null>(null);
@@ -111,15 +131,17 @@ export class UserData {
                     (snapshot) => {
                         const familyIdOrMap: string | { families: { [key: string]: boolean } } =
                             snapshot.val();
-                        this.serverFamilyIds =
+                        this.serverFamilyIds.set(
                             typeof familyIdOrMap === 'string'
                                 ? [familyIdOrMap]
-                                : Object.keys(familyIdOrMap?.families || {});
+                                : Object.keys(familyIdOrMap?.families || {})
+                        );
+                        const serverFamilyIds = this.serverFamilyIds();
                         const lastFamilyId = this.userStorage('lastFamilyId');
                         this.switchToFamilyId(
-                            lastFamilyId && this.serverFamilyIds.includes(lastFamilyId)
+                            lastFamilyId && serverFamilyIds.includes(lastFamilyId)
                                 ? lastFamilyId
-                                : this.serverFamilyIds[0] || null
+                                : serverFamilyIds[0] || null
                         );
                     },
                     (error) => console.error('Unable to load families', error)
@@ -288,24 +310,29 @@ export class UserData {
     }
 
     nameChild(name: string) {
-        this.connectNewFamily(this.familyId(), name);
+        this.renameChild(this.familyId()!, name);
     }
 
-    renameChild(child: ConnectedFamily, name: string) {
-        this.connectedFamilies.update((families) =>
-            families.map((family) => (family === child ? { ...family, name } : family))
-        );
+    renameChild(childId: string, name: string) {
+        name = name.trim();
+        this.connectedFamilies.update((families) => [
+            ...families.filter((family) => family.id !== childId),
+            ...(name ? [{ id: childId, name }] : []),
+        ]);
         this.saveConnectedFamilies();
+        if (this.familyId() === childId) {
+            this.child.set(name || null);
+        }
     }
 
     async detachChild(child: ConnectedFamily) {
-        this.connectedFamilies.update((families) => families.filter((family) => family !== child));
+        this.connectedFamilies.update((families) => families.filter((family) => family.id !== child.id));
         this.saveConnectedFamilies();
 
         // Make sure we don't keep a deleted child selected
         if (this.familyId() === child.id) {
             await this.switchToFamilyId(
-                this.serverFamilyIds.find((familyId) => familyId !== child.id) || null
+                this.serverFamilyIds().find((familyId) => familyId !== child.id) || null
             );
         }
         // Then give up this user's access to the child's log
@@ -326,14 +353,14 @@ export class UserData {
      */
     private grantFamilyAccess(familyId: string) {
         const permissions: Record<string, boolean> = { [familyId]: true };
-        for (const existingId of this.serverFamilyIds) {
+        for (const existingId of this.serverFamilyIds()) {
             permissions[existingId] = true;
         }
         return update(ref(this.db, `users/${this.auth.uid()}/families`), permissions);
     }
 
     private resetState() {
-        this.serverFamilyIds = [];
+        this.serverFamilyIds.set([]);
         this.familyId.set(null);
         this.child.set(null);
         this.connectedFamilies.set([]);

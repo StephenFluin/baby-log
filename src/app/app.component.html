@@ -1,28 +1,44 @@
 <header class="toolbar">
     <nav>
-        <a routerLink="/">Baby Log</a>
-        <button type="button" aria-label="Menu" [matMenuTriggerFor]="types">
-            <svg style="width: 24px; height: 24px;" viewBox="0 0 24 24" aria-hidden="true">
+        <button type="button" class="menu-button" aria-label="Menu" [matMenuTriggerFor]="appMenu">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path fill="currentColor" d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z" />
             </svg>
         </button>
-        <mat-menu #types="matMenu">
+        <a class="title" routerLink="/">Baby Log</a>
+        @if (auth.user() && userData.currentFamily(); as current) {
+            <button
+                type="button"
+                class="child-switcher"
+                [matMenuTriggerFor]="childMenu"
+                [attr.aria-label]="'Viewing ' + current.name + '. Switch child'"
+            >
+                <span>{{ current.name }}</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path fill="currentColor" d="M7,10L12,15L17,10H7Z" />
+                </svg>
+            </button>
+        }
+        <mat-menu #appMenu="matMenu">
             <a mat-menu-item routerLink="/types">Manage Types</a>
-            <button type="button" mat-menu-item [matMenuTriggerFor]="children">Switch Child</button>
             <a mat-menu-item routerLink="/family">Manage Family</a>
-            <button type="button" mat-menu-item [matMenuTriggerFor]="childrenHistory">History</button>
-        </mat-menu>
-
-        <mat-menu #children="matMenu">
-            @for (child of userData.connectedFamilies(); track child.id) {
-                <button type="button" mat-menu-item (click)="switchTo(child)">{{ child.name }}</button>
+            @if (userData.currentFamily(); as current) {
+                <button type="button" mat-menu-item (click)="showHistoryOf(current)">History</button>
             }
         </mat-menu>
-
-        <mat-menu #childrenHistory="matMenu">
-            @for (child of userData.connectedFamilies(); track child.id) {
-                <button type="button" mat-menu-item (click)="showHistoryOf(child)">{{ child.name }}</button>
+        <mat-menu #childMenu="matMenu">
+            @for (child of userData.families(); track child.id) {
+                <button
+                    type="button"
+                    mat-menu-item
+                    [attr.aria-current]="child.id === userData.familyId() ? 'true' : null"
+                    (click)="switchTo(child)"
+                >
+                    <span class="check" aria-hidden="true">{{ child.id === userData.familyId() ? '✓' : '' }}</span>
+                    {{ child.name }}
+                </button>
             }
+            <a mat-menu-item routerLink="/family">Add or manage children</a>
         </mat-menu>
     </nav>
     <div class="user-details">

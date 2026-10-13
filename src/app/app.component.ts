@@ -3,7 +3,7 @@ import { Component, inject } from '@angular/core';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { Auth } from './auth.service';
 import { BUILD_DATE } from './build-info';
-import { ConnectedFamily, UserData } from './user-data.service';
+import { ChildOption, UserData } from './user-data.service';
 import { MatMenuTrigger, MatMenu, MatMenuItem } from '@angular/material/menu';
 
 @Component({
@@ -24,12 +24,13 @@ export class AppComponent {
     private router = inject(Router);
     buildDate = BUILD_DATE;
 
-    switchTo(child: ConnectedFamily) {
+    switchTo(child: ChildOption) {
         // Use a URL instead of switching directly
-        this.router.navigate(['child', child.id, child.name]);
+        this.router.navigate(child.named ? ['child', child.id, child.name] : ['child', child.id]);
     }
-    showHistoryOf(child: ConnectedFamily) {
-        // Use a URL instead of switching directly
-        this.router.navigate(['child', child.id, child.name, 'history']);
+    showHistoryOf(child: ChildOption) {
+        this.router.navigate(
+            child.named ? ['child', child.id, child.name, 'history'] : ['child', child.id, 'history']
+        );
     }
 }

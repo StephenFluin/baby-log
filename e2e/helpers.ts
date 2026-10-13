@@ -33,6 +33,13 @@ export async function openMenu(page: Page, ...items: string[]) {
     }
 }
 
+/** Switch to another child with the switcher next to the title */
+export async function switchChild(page: Page, name: string) {
+    await page.getByRole('button', { name: /^Viewing .*Switch child$/ }).click();
+    await page.getByRole('menuitem', { name }).click();
+    await expect(page.getByRole('button', { name: `Viewing ${name}. Switch child` })).toBeVisible();
+}
+
 export async function confirmDialog(page: Page, action: string) {
     await page.getByRole('dialog').getByRole('button', { name: action }).click();
     await expect(page.getByRole('dialog')).toBeHidden();

@@ -1,23 +1,24 @@
 import { Component, inject, signal } from '@angular/core';
 import { Auth } from '../auth.service';
 import { Dialogs } from '../dialogs';
-import { ConnectedFamily, Member, UserData } from '../user-data.service';
+import { ChildOption, Member, UserData } from '../user-data.service';
 
 @Component({
     selector: 'app-family',
     template: `
         <div class="main">
             <h2>Manage Family</h2>
-            <p>Name</p>
+            <p>Names are only saved on this device.</p>
             <table style="max-width: 500px;">
-                @for (child of userData.connectedFamilies(); track child.id) {
+                @for (child of userData.families(); track child.id) {
                     <tr>
                         <td>
                             <input
                                 type="text"
-                                [value]="child.name"
+                                [value]="child.named ? child.name : ''"
+                                [placeholder]="child.name"
                                 [attr.aria-label]="'Name of ' + child.name"
-                                (change)="userData.renameChild(child, nameInput.value)"
+                                (change)="userData.renameChild(child.id, nameInput.value)"
                                 #nameInput
                             />
                         </td>
@@ -78,7 +79,7 @@ export class FamilyComponent {
         this.userData.connectNewFamily(null, name);
         this.showNew.set(false);
     }
-    async delete(child: ConnectedFamily) {
+    async delete(child: ChildOption) {
         const onlyMember = (await this.userData.memberCount(child.id)) <= 1;
         const message = onlyMember
             ? `You're the only one who can see ${child.name}'s log. If you detach, nobody will be able to see it again.`

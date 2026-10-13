@@ -4,6 +4,7 @@ import { confirmDialog, openMenu, signIn } from './helpers';
 test('logs a day of activities', async ({ page }) => {
     await signIn(page, 'Logger');
     await expect(page.getByText('We created this log for you')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Viewing Unnamed child 1. Switch child' })).toBeVisible();
     await expect(page.getByRole('contentinfo')).toContainText(/Build: \w{3} \d{1,2}, \d{4}/);
 
     // Name the baby (stored only on this device)
@@ -11,6 +12,7 @@ test('logs a day of activities', async ({ page }) => {
     await page.getByRole('button', { name: 'Save' }).click();
     await expect(page.getByRole('heading', { name: 'Ada', level: 1 })).toBeVisible();
     await expect(page).toHaveTitle('Ada Baby Log');
+    await expect(page.getByRole('button', { name: 'Viewing Ada. Switch child' })).toBeVisible();
 
     // Visiting Manage Types fills in the default types
     await openMenu(page, 'Manage Types');
@@ -47,7 +49,7 @@ test('logs a day of activities', async ({ page }) => {
     await expect(page.getByLabel('Time of diaper')).toHaveCount(0);
 
     // Everything shows up in the history
-    await openMenu(page, 'History', 'Ada');
+    await openMenu(page, 'History');
     await expect(page.getByRole('heading', { name: 'Ada History' })).toBeVisible();
     await expect(page.getByText('Went down easily')).toBeVisible();
 });
