@@ -5,7 +5,7 @@
   "hosting": [
     {
       "target": "baby-log",
-      "public": "dist/baby-log",
+      "public": "dist/baby-log/browser",
       "ignore": [
         "firebase.json",
         "**/.*",
