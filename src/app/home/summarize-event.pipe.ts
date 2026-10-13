@@ -1,18 +1,18 @@
 import { Pipe, PipeTransform } from '@angular/core';
-import { Event } from '../user-data.service';
+import { Activity, Event } from '../user-data.service';
 
 // @TODO it looks like we store null/empty details by default, but the user thinks they have picked something
 const SLEEPDEFAULT = 'crib';
 
 @Pipe({ name: 'summarizeEvent' })
 export class SummarizeEventPipe implements PipeTransform {
-    transform(value: Event, args?: any): any {
+    transform(value: Event) {
         const event: Event = Object.assign(value);
 
-        let lastActivity;
-        const maxTimes = {},
-            totalTimes = {},
-            totalPretty = {};
+        let lastActivity: Activity | undefined;
+        const maxTimes: Record<string, number> = {},
+            totalTimes: Record<string, number> = {},
+            totalPretty: Record<string, string> = {};
         const sleepChart = [
             ...new Set(
                 event.activities
@@ -51,9 +51,12 @@ export class SummarizeEventPipe implements PipeTransform {
 
                 totalTimes[activity.activity] += minutes;
                 if (activity.activity === 'asleep') {
-                    sleepChart.find(
-                        type => type.name === (activity.activityDetails || SLEEPDEFAULT)
-                    ).value += minutes;
+                    const sleepSlice = sleepChart.find(
+                        (type) => type.name === (activity.activityDetails || SLEEPDEFAULT)
+                    );
+                    if (sleepSlice) {
+                        sleepSlice.value += minutes;
+                    }
                 }
                 maxTimes[activity.activity] = Math.max(minutes, maxTimes[activity.activity]);
             }

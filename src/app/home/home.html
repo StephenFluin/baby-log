@@ -32,7 +32,7 @@
             <span i18n>Create New Day</span>
         </button>
 
-        @for (day of events; track day.key; let i = $index) {
+        @for (day of events; track day.key) {
             <div class="day-container">
                 <h2>
                     {{ day.value.date }}
@@ -131,7 +131,7 @@
                             <td>
                                 <div
                                     class="icon-circle"
-                                    (click)="userData.deleteActivity(day.key, day.value, i, activityIndex)"
+                                    (click)="userData.deleteActivity(day.key, day.value, activityIndex)"
                                 >
                                     <img
                                         src="../assets/images/baseline-delete_forever-24px.svg"

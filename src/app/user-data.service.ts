@@ -18,16 +18,16 @@ import { parse, parseISO, formatISO } from 'date-fns';
 export interface Data {
     events: Event[];
 }
+export interface Activity {
+    activity: string;
+    activityDetails: string;
+    notes?: string;
+    person?: string;
+    time: string;
+}
 export interface Event {
     date: string;
-    activities: {
-        activity: string;
-        activityDetails: string;
-        notes?: string;
-        person?: string;
-        time: string;
-    }[];
-    summary?;
+    activities: Activity[];
 }
 export interface ActivityType {
     name: string;
@@ -109,7 +109,7 @@ export class UserData {
                                 : Object.keys(familyIdOrMap?.families || {});
                         const lastFamilyId = this.userStorage('lastFamilyId');
                         this.switchToFamilyId(
-                            this.serverFamilyIds.includes(lastFamilyId)
+                            lastFamilyId && this.serverFamilyIds.includes(lastFamilyId)
                                 ? lastFamilyId
                                 : this.serverFamilyIds[0] || null
                         );
@@ -176,7 +176,7 @@ export class UserData {
      * Push a new connected family into the DB for the user
      * Switch to the family
      */
-    async connectNewFamily(id: string, name: string) {
+    async connectNewFamily(id: string | null, name: string) {
         if (!id) {
             id = await this.createMissingFamily();
         }
@@ -226,7 +226,7 @@ export class UserData {
      * (including a legacy single family ID stored directly on the user)
      */
     private grantFamilyAccess(familyId: string) {
-        const permissions = { [familyId]: true };
+        const permissions: Record<string, boolean> = { [familyId]: true };
         for (const existingId of this.serverFamilyIds) {
             permissions[existingId] = true;
         }
@@ -268,12 +268,12 @@ export class UserData {
      * Or when a user is adding a child to their profile.
      */
     async createMissingFamily() {
-        const key = push(ref(this.db, 'families')).key;
+        const key = push(ref(this.db, 'families')).key!;
         await this.grantFamilyAccess(key);
         await set(ref(this.db, `families/${key}/`), { creationDate: localeIsoString(new Date()) });
         return key;
     }
-    async switchToFamilyId(familyId: string) {
+    async switchToFamilyId(familyId: string | null) {
         // Let's see if the user gave this person a name!
         const child = this.connectedFamilies().find((family) => family.id === familyId);
         this.child.set(child?.name ?? null);
@@ -296,18 +296,12 @@ export class UserData {
             activities: [],
         });
     }
-    deleteEvent(key) {
+    deleteEvent(key: string) {
         if (confirm('Are you sure you want to delete this day?')) {
             remove(ref(this.db, `families/${this.familyId()}/events/${key}`));
         }
     }
-    addActivity(
-        eventKey: string,
-        event,
-        activity: string,
-        activityDetails: string,
-        person?: string
-    ) {
+    addActivity(eventKey: string, event: Event, activity: string, activityDetails: string) {
         if (!event.activities) {
             event.activities = [];
         }
@@ -318,7 +312,7 @@ export class UserData {
         });
         this.saveEvent(eventKey, event);
     }
-    deleteActivity(eventKey: string, event: Event, eventIndex, activityIndex: number) {
+    deleteActivity(eventKey: string, event: Event, activityIndex: number) {
         if (
             confirm(
                 `Are you sure you want to delete this '${event.activities[activityIndex].activity}' entry?`
@@ -329,13 +323,13 @@ export class UserData {
         }
     }
 
-    updateTime(eventKey: string, event: Event, activity, newValue: string) {
+    updateTime(eventKey: string, event: Event, activity: Activity, newValue: string) {
         // Format the time as a date, and swap the last 11 chars of the original
         const nt = parse(newValue, 'h:mm a', parseISO(activity.time));
         activity.time = localeIsoString(nt).substring(0, 16);
         this.updateEvent(eventKey, event);
     }
-    updateDate(eventKey: string, event: Event, activity, change: number) {
+    updateDate(eventKey: string, event: Event, activity: Activity, change: number) {
         activity.time = localeIsoString(
             new Date(new Date(activity.time).valueOf() + change * 24 * 60 * 60 * 1000)
         ).substring(0, 16);
@@ -345,7 +339,7 @@ export class UserData {
     /**
      * Update an event after sorting activities
      */
-    updateEvent(eventKey: string, event) {
+    updateEvent(eventKey: string, event: Event) {
         // Sort the activities
         event.activities.sort((a, b) => {
             if (a.time > b.time) {

@@ -1,7 +1,7 @@
 import { Component, effect, inject } from '@angular/core';
 import { UserData } from '../user-data.service';
 
-export const DEFAULT_TYPES = {
+export const DEFAULT_TYPES: Record<string, string[]> = {
     feed: ['left', 'right', 'bottle'],
     awake: [],
     asleep: ['chair', 'bassinet', 'dockatot', 'lap', 'arms'],
@@ -27,11 +27,11 @@ export class ManageTypes {
             }
         });
     }
-    updateDetails(typeId: string, details: string[], newDetailBox: HTMLInputElement) {
+    updateDetails(typeId: string, details: string[] | undefined, newDetailBox: HTMLInputElement) {
         this.userData.updateTypeDetail(typeId, [...(details || []), newDetailBox.value]);
         newDetailBox.value = '';
     }
-    deleteDetail(typeId: string, details: string[], detailName: string) {
+    deleteDetail(typeId: string, details: string[] = [], detailName: string) {
         this.userData.updateTypeDetail(
             typeId,
             details.filter((detail) => detail !== detailName)

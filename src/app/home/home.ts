@@ -1,6 +1,6 @@
 import { Component, effect, inject, input } from '@angular/core';
 import { Title } from '@angular/platform-browser';
-import { Event, UserData } from '../user-data.service';
+import { Activity, Event, UserData } from '../user-data.service';
 import { RouterLink } from '@angular/router';
 import { NgxMatTimepickerDirective, NgxMatTimepickerComponent } from 'ngx-mat-timepicker';
 import { ShareFooter } from '../share-footer';
@@ -36,7 +36,7 @@ export class Home {
         effect(() => title.setTitle(`${this.userData.child() || ''} Baby Log`.trim()));
     }
 
-    setDetails(day: { value: Event; key: string }, activity: Event['activities'][number], details: string) {
+    setDetails(day: { value: Event; key: string }, activity: Activity, details: string) {
         activity.activityDetails = details;
         this.userData.saveEvent(day.key, day.value);
     }
