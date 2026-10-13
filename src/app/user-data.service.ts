@@ -43,14 +43,19 @@ export interface ChildOption extends ConnectedFamily {
     /** Whether anyone has named this child */
     named: boolean;
 }
+/** Managers can also invite and remove people and change roles; caregivers just use the log */
+export type Role = 'manager' | 'caregiver';
 export interface Member {
     uid: string;
     name: string;
+    role: Role;
 }
 
 export interface Invite {
     familyId: string;
     childName?: string;
+    /** Missing on invites from before roles existed, which make you a caregiver */
+    role?: Role;
     createdBy: string;
     expires: number;
 }
@@ -111,6 +116,8 @@ export class UserData {
     readonly familyMembers = signal<Record<string, Member[]>>({});
     /** People who can see and edit the current family's log */
     readonly members = computed(() => this.familyMembers()[this.familyId() ?? ''] ?? []);
+    /** Whether the user can invite and remove people for the current family */
+    readonly canManage = computed(() => this.isManagerOf(this.familyId()));
 
     private eventsLoaded = signal(false);
     readonly status = computed(() => (this.eventsLoaded() ? 'ready' : 'waiting'));
@@ -190,8 +197,13 @@ export class UserData {
                     ref(this.db, `families/${familyId}/members`),
                     (snapshot) => {
                         const uid = this.auth.uid();
-                        const members = snapshotList<{ name: string }>(snapshot)
-                            .map((member) => ({ uid: member.key, name: member.value.name }))
+                        const members = snapshotList<{ name: string; role?: Role }>(snapshot)
+                            .map((member) => ({
+                                uid: member.key,
+                                name: member.value.name,
+                                // People who joined before roles existed are managers
+                                role: member.value.role ?? ('manager' as Role),
+                            }))
                             // You first, then everyone else by name
                             .sort((a, b) =>
                                 a.uid === uid ? -1 : b.uid === uid ? 1 : a.name.localeCompare(b.name)
@@ -289,6 +301,7 @@ export class UserData {
                     name: this.memberName(),
                     joined: serverTimestamp(),
                     invite: token,
+                    role: invite.role ?? 'caregiver',
                 },
                 [`invites/${token}`]: null,
             });
@@ -302,7 +315,7 @@ export class UserData {
      * Create a single use invite to the current family
      * @returns the link to send to the person being invited
      */
-    async createInvite() {
+    async createInvite(role: Role) {
         const bytes = crypto.getRandomValues(new Uint8Array(24));
         const token = btoa(String.fromCharCode(...bytes))
             .replace(/\+/g, '-')
@@ -310,6 +323,7 @@ export class UserData {
             .replace(/=+$/, '');
         const invite: Invite = {
             familyId: this.familyId()!,
+            role,
             createdBy: this.auth.uid()!,
             expires: Date.now() + INVITE_LIFETIME,
         };
@@ -319,6 +333,18 @@ export class UserData {
         }
         await set(ref(this.db, `invites/${token}`), invite);
         return `${location.origin}/attach/${token}`;
+    }
+
+    /** Whether the user is a manager of a family */
+    isManagerOf(familyId: string | null) {
+        const uid = this.auth.uid();
+        return (this.familyMembers()[familyId ?? ''] ?? []).some(
+            (member) => member.uid === uid && member.role === 'manager'
+        );
+    }
+
+    setRole(familyId: string, uid: string, role: Role) {
+        return set(ref(this.db, `families/${familyId}/members/${uid}/role`), role);
     }
 
     removeMember(familyId: string, uid: string) {
@@ -436,7 +462,11 @@ export class UserData {
             creationDate: localeIsoString(new Date()),
             ...(childName?.trim() ? { name: childName.trim().slice(0, 100) } : {}),
             members: {
-                [this.auth.uid()!]: { name: this.memberName(), joined: serverTimestamp() },
+                [this.auth.uid()!]: {
+                    name: this.memberName(),
+                    joined: serverTimestamp(),
+                    role: 'manager',
+                },
             },
         });
         // Only list the family once the user is a member, since listing it switches to it

@@ -1,5 +1,5 @@
 import { Component, effect, inject, signal } from '@angular/core';
-import { UserData } from './user-data.service';
+import { Role, UserData } from './user-data.service';
 
 @Component({
     selector: 'app-share-footer',
@@ -16,9 +16,22 @@ import { UserData } from './user-data.service';
                     }
                     <a [href]="mailto(link)">Email the invite</a>
                 </div>
-            } @else {
+            } @else if (userData.canManage()) {
                 <p>Invite someone else to see and add to this log.</p>
+                <fieldset>
+                    <legend>They'll be a</legend>
+                    <label>
+                        <input type="radio" name="invite-role" value="caregiver" [checked]="role() === 'caregiver'" (change)="role.set('caregiver')" />
+                        Caregiver: can see and add to the log
+                    </label>
+                    <label>
+                        <input type="radio" name="invite-role" value="manager" [checked]="role() === 'manager'" (change)="role.set('manager')" />
+                        Manager: can also invite and remove people
+                    </label>
+                </fieldset>
                 <button type="button" (click)="createInvite()">Create invite link</button>
+            } @else {
+                <p>Ask a manager of this log if you'd like to invite someone else.</p>
             }
             @if (error()) {
                 <p role="alert">{{ error() }}</p>
@@ -28,6 +41,15 @@ import { UserData } from './user-data.service';
     styles: `
         .share-footer {
             margin-top: 250px;
+        }
+        fieldset {
+            border: none;
+            padding: 0;
+            margin: 0 0 12px;
+        }
+        fieldset label {
+            display: block;
+            margin: 4px 0;
         }
         #invite-link {
             width: 100%;
@@ -51,6 +73,7 @@ export class ShareFooter {
     inviteLink = signal<string | null>(null);
     error = signal<string | null>(null);
     copied = signal(false);
+    role = signal<Role>('caregiver');
     /** The system share sheet, mostly on phones */
     canShare = typeof navigator.share === 'function';
 
@@ -61,13 +84,14 @@ export class ShareFooter {
             this.inviteLink.set(null);
             this.error.set(null);
             this.copied.set(false);
+            this.role.set('caregiver');
         });
     }
 
     async createInvite() {
         this.error.set(null);
         try {
-            this.inviteLink.set(await this.userData.createInvite());
+            this.inviteLink.set(await this.userData.createInvite(this.role()));
         } catch {
             this.error.set("Couldn't create an invite. Please try again.");
         }

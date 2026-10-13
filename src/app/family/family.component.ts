@@ -1,7 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { Auth } from '../auth.service';
 import { Dialogs } from '../dialogs';
-import { ChildOption, Member, UserData } from '../user-data.service';
+import { ChildOption, Member, Role, UserData } from '../user-data.service';
 
 @Component({
     selector: 'app-family',
@@ -23,12 +23,23 @@ import { ChildOption, Member, UserData } from '../user-data.service';
                     </div>
                     <h3>People with access</h3>
                     <ul>
+                        @let manager = userData.isManagerOf(child.id);
                         @for (member of userData.familyMembers()[child.id] ?? []; track member.uid) {
                             <li>
-                                <span>{{ member.name }}</span>
-                                @if (member.uid === auth.uid()) {
-                                    <span class="you">(you)</span>
-                                } @else {
+                                <span>
+                                    {{ member.name }}
+                                    @if (member.uid === auth.uid()) {
+                                        <span class="you">(you)</span>
+                                    }
+                                </span>
+                                @if (manager && member.uid !== auth.uid()) {
+                                    <select
+                                        [attr.aria-label]="'Role of ' + member.name + ' for ' + child.name"
+                                        (change)="changeRole(child, member, $any($event.target).value)"
+                                    >
+                                        <option value="caregiver" [selected]="member.role === 'caregiver'">Caregiver</option>
+                                        <option value="manager" [selected]="member.role === 'manager'">Manager</option>
+                                    </select>
                                     <button
                                         type="button"
                                         [attr.aria-label]="'Remove ' + member.name + ' from ' + child.name"
@@ -36,6 +47,8 @@ import { ChildOption, Member, UserData } from '../user-data.service';
                                     >
                                         Remove
                                     </button>
+                                } @else {
+                                    <span class="role">{{ member.role === 'manager' ? 'Manager' : 'Caregiver' }}</span>
                                 }
                             </li>
                         }
@@ -97,8 +110,14 @@ import { ChildOption, Member, UserData } from '../user-data.service';
         li span:first-child {
             flex: 1;
         }
-        .you {
+        .you,
+        .role {
             opacity: 0.7;
+        }
+        select {
+            height: 32px;
+            font-size: 14px;
+            border-radius: 4px;
         }
     `,
 })
@@ -122,6 +141,10 @@ export class FamilyComponent {
             this.userData.detachChild(child);
         }
     }
+    async changeRole(child: ChildOption, member: Member, role: Role) {
+        await this.userData.setRole(child.id, member.uid, role);
+    }
+
     async removeMember(child: ChildOption, member: Member) {
         if (await this.dialogs.confirm(`Stop ${member.name} from seeing ${child.name}?`, 'Remove')) {
             this.userData.removeMember(child.id, member.uid);

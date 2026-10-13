@@ -56,3 +56,43 @@ test('explains that links from before invites no longer work', async ({ page }) 
     await expect(page.getByRole('alert')).toContainText('no longer works');
     await expect(page.getByRole('button', { name: 'Add Someone' })).toHaveCount(0);
 });
+
+test('caregivers can use the log but only managers can manage who has access', async ({ page }) => {
+    await signIn(page, 'Mom');
+    await page.getByLabel("Baby's name").fill('Roley');
+    await page.getByRole('button', { name: 'Save' }).click();
+    await page.getByRole('button', { name: 'Create New Day' }).click();
+    await expect(page.getByRole('radio', { name: /Caregiver/ })).toBeChecked();
+    await page.getByRole('button', { name: 'Create invite link' }).click();
+    const caregiverInvite = new URL(await page.getByLabel('Invite link').inputValue()).pathname;
+    await signOut(page);
+
+    // The caregiver can log, but can't invite or manage people
+    await signIn(page, 'Nanny');
+    await page.goto(caregiverInvite);
+    await page.getByRole('button', { name: 'Add Roley' }).click();
+    await expect(page.getByRole('heading', { name: 'Roley', level: 1 })).toBeVisible();
+    await page.getByRole('button', { name: 'Create New Day' }).click();
+    await expect(page.locator('.day-container')).toHaveCount(2);
+    await expect(page.getByText('Ask a manager of this log')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Create invite link' })).toHaveCount(0);
+    await openMenu(page, 'Manage Family');
+    const roley = page.getByRole('region', { name: 'Roley' });
+    await expect(roley.getByRole('listitem').filter({ hasText: 'Mom' })).toContainText('Manager');
+    await expect(roley.getByRole('listitem').filter({ hasText: 'Nanny' })).toContainText('Caregiver');
+    await expect(roley.getByRole('button', { name: /^Remove/ })).toHaveCount(0);
+    await signOut(page);
+
+    // A manager can promote them
+    await signIn(page, 'Mom');
+    await openMenu(page, 'Manage Family');
+    await page.getByLabel('Role of Nanny for Roley').selectOption('manager');
+    await signOut(page);
+
+    await signIn(page, 'Nanny');
+    await expect(page.getByRole('button', { name: 'Create invite link' })).toBeVisible();
+    await openMenu(page, 'Manage Family');
+    await expect(
+        page.getByRole('region', { name: 'Roley' }).getByRole('button', { name: 'Remove Mom from Roley' })
+    ).toBeVisible();
+});

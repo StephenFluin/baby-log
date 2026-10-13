@@ -39,6 +39,7 @@ beforeEach(async () => {
         await set(ref(context.database(), `invites/${TOKEN}`), {
             familyId: 'fam',
             childName: 'Ada',
+            role: 'caregiver',
             createdBy: 'alice',
             expires: Date.now() + DAY,
         });
@@ -100,13 +101,13 @@ describe('families', () => {
 
 describe('invites', () => {
     const OTHER_TOKEN = 'zyxwvutsrqponmlkjihgfedcba';
-    const join = (uid: string, token = TOKEN, familyId = 'fam') =>
+    const join = (uid: string, token = TOKEN, familyId = 'fam', role = 'caregiver') =>
         update(ref(db(uid)), {
-            [`families/${familyId}/members/${uid}`]: { ...member(uid), invite: token },
+            [`families/${familyId}/members/${uid}`]: { ...member(uid), invite: token, role },
             [`invites/${token}`]: null,
         });
-    const invite = (uid: string, expires = Date.now() + DAY, familyId = 'fam') =>
-        set(ref(db(uid), `invites/${OTHER_TOKEN}`), { familyId, createdBy: uid, expires });
+    const invite = (uid: string, expires = Date.now() + DAY, familyId = 'fam', role = 'caregiver') =>
+        set(ref(db(uid), `invites/${OTHER_TOKEN}`), { familyId, createdBy: uid, expires, role });
 
     it('lets members create invites that expire within 30 days', async () => {
         await assertSucceeds(invite('alice'));
@@ -142,9 +143,37 @@ describe('invites', () => {
 
     it('requires the invite to be used up while joining', async () => {
         await assertFails(
-            set(ref(db('bob'), 'families/fam/members/bob'), { ...member('Bob'), invite: TOKEN })
+            set(ref(db('bob'), 'families/fam/members/bob'), {
+                ...member('Bob'),
+                invite: TOKEN,
+                role: 'caregiver',
+            })
         );
         await assertFails(remove(ref(db('bob'), `invites/${TOKEN}`)));
+    });
+
+    it('gives exactly the role the invite was for', async () => {
+        await assertFails(join('bob', TOKEN, 'fam', 'manager'));
+        await assertSucceeds(join('bob', TOKEN, 'fam', 'caregiver'));
+    });
+
+    it('treats invites from before roles existed as caregiver invites', async () => {
+        await env.withSecurityRulesDisabled((context) =>
+            set(ref(context.database(), `invites/${TOKEN}/role`), null)
+        );
+        await assertFails(join('bob', TOKEN, 'fam', 'manager'));
+        await assertSucceeds(join('bob', TOKEN, 'fam', 'caregiver'));
+    });
+
+    it('requires invites to say which role they give', async () => {
+        await assertFails(
+            set(ref(db('alice'), `invites/${OTHER_TOKEN}`), {
+                familyId: 'fam',
+                createdBy: 'alice',
+                expires: Date.now() + DAY,
+            })
+        );
+        await assertFails(invite('alice', Date.now() + DAY, 'fam', 'owner'));
     });
 
     it('rejects made-up and expired invites', async () => {
@@ -162,19 +191,65 @@ describe('invites', () => {
 });
 
 describe('members', () => {
+    // Alice predates roles, so she counts as a manager. Bob is a caregiver, Carol a manager.
     beforeEach(() =>
-        env.withSecurityRulesDisabled((context) =>
-            set(ref(context.database(), 'families/fam/members/bob'), { name: 'Bob', joined: 1 })
-        )
+        env.withSecurityRulesDisabled(async (context) => {
+            await set(ref(context.database(), 'families/fam/members/bob'), {
+                name: 'Bob',
+                joined: 1,
+                role: 'caregiver',
+            });
+            await set(ref(context.database(), 'families/fam/members/carol'), {
+                name: 'Carol',
+                joined: 1,
+                role: 'manager',
+            });
+        })
     );
 
-    it('lets members remove themselves or others', async () => {
+    it('lets managers remove others', async () => {
         await assertSucceeds(remove(ref(db('alice'), 'families/fam/members/bob')));
+        await assertSucceeds(remove(ref(db('carol'), 'families/fam/members/alice')));
+    });
+
+    it('lets anyone remove themselves', async () => {
+        await assertSucceeds(remove(ref(db('bob'), 'families/fam/members/bob')));
         await assertSucceeds(remove(ref(db('alice'), 'families/fam/members/alice')));
     });
 
-    it("doesn't let non-members remove anyone", async () => {
+    it("doesn't let caregivers or non-members remove anyone else", async () => {
+        await assertFails(remove(ref(db('bob'), 'families/fam/members/carol')));
         await assertFails(remove(ref(db('mallory'), 'families/fam/members/bob')));
+    });
+
+    it("lets managers change people's roles", async () => {
+        await assertSucceeds(set(ref(db('carol'), 'families/fam/members/bob/role'), 'manager'));
+        await assertSucceeds(set(ref(db('alice'), 'families/fam/members/carol/role'), 'caregiver'));
+        await assertFails(set(ref(db('alice'), 'families/fam/members/bob/role'), 'owner'));
+        await assertFails(set(ref(db('alice'), 'families/fam/members/nobody/role'), 'manager'));
+    });
+
+    it("doesn't let caregivers change roles, including their own", async () => {
+        await assertFails(set(ref(db('bob'), 'families/fam/members/bob/role'), 'manager'));
+        await assertFails(set(ref(db('bob'), 'families/fam/members/carol/role'), 'caregiver'));
+        await assertFails(
+            set(ref(db('bob'), 'families/fam/members/bob'), { name: 'Bob', joined: 1, role: 'manager' })
+        );
+    });
+
+    it('lets caregivers use the log and name the child, but not invite people', async () => {
+        await assertSucceeds(get(ref(db('bob'), 'families/fam/events')));
+        await assertSucceeds(set(ref(db('bob'), 'families/fam/events/e2'), { date: '2026-10-14' }));
+        await assertSucceeds(set(ref(db('bob'), 'families/fam/name'), 'Ada'));
+        await assertFails(
+            set(ref(db('bob'), 'invites/zyxwvutsrqponmlkjihgfedcba'), {
+                familyId: 'fam',
+                createdBy: 'bob',
+                expires: Date.now() + DAY,
+                role: 'caregiver',
+            })
+        );
+        await assertFails(remove(ref(db('bob'), `invites/${TOKEN}`)));
     });
 });
 
