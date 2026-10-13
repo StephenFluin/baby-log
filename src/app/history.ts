@@ -10,6 +10,7 @@ import { UserData } from './user-data.service';
 @Component({
     selector: 'app-history',
     templateUrl: './history.html',
+    standalone: false
 })
 export class History {
     destroy = new Subject();

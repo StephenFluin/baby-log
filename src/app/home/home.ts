@@ -10,6 +10,7 @@ import { ActivatedRoute } from '@angular/router';
 @Component({
     selector: 'app-home',
     templateUrl: './home.html',
+    standalone: false
 })
 export class Home {
     // darkTheme: NgxMaterialTimepickerTheme = {

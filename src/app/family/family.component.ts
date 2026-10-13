@@ -55,6 +55,7 @@ import { UserData } from '../user-data.service';
         </div>
     `,
     styles: [],
+    standalone: false
 })
 export class FamilyComponent {
     showNew = false;

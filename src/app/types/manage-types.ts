@@ -15,6 +15,7 @@ export const DEFAULT_TYPES = {
 @Component({
     selector: 'app-manage-types',
     templateUrl: 'manage-types.html',
+    standalone: false
 })
 export class ManageTypes implements OnDestroy {
     cleanup = new Subject();

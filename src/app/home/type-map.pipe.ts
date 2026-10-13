@@ -3,6 +3,7 @@ import { ActivityType } from '../user-data.service';
 
 @Pipe({
     name: 'typeMap',
+    standalone: false
 })
 export class TypeMapPipe implements PipeTransform {
     transform(value: { key: string; value: ActivityType }[], args?: any): any {

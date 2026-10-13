@@ -14,6 +14,7 @@ import { Observable } from 'rxjs';
             </ng-container>
         </div>
     `,
+    standalone: false
 })
 export class AttachComponent {
     data:Observable<Params>;

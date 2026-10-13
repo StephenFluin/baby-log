@@ -6,6 +6,7 @@ const SLEEPDEFAULT = 'crib';
 
 @Pipe({
     name: 'summarizeEvent',
+    standalone: false
 })
 export class SummarizeEventPipe implements PipeTransform {
     transform(value: Event, args?: any): any {
