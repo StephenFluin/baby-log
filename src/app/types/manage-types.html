@@ -1,41 +1,48 @@
 <div class="main">
-  <h2>Manage Types</h2>
-  @if (userData.typeList | async; as types) {
-    <div>
-      @for (keyValue of types; track keyValue) {
+    <h2>Manage Types</h2>
+    @if (userData.types(); as types) {
         <div>
-          <h3>
-            {{keyValue.value.name}}
-            <div class="icon-circle">
-              <img (click)="deleteType(keyValue.key)" src="/assets/images/baseline-delete_forever-24px.svg" />
-            </div>
-          </h3>
-          <div style="padding-left: 32px;">
-            @for (detail of keyValue.value.details; track detail) {
-              <div>
-                {{detail}}
-                <div class="icon-circle">
-                  <img (click)="deleteDetail(keyValue.key, keyValue.value.details,detail)" src="/assets/images/baseline-delete_forever-24px.svg" />
+            @for (keyValue of types; track keyValue.key) {
+                <div>
+                    <h3>
+                        {{ keyValue.value.name }}
+                        <div class="icon-circle">
+                            <img
+                                (click)="deleteType(keyValue.key)"
+                                src="/assets/images/baseline-delete_forever-24px.svg"
+                            />
+                        </div>
+                    </h3>
+                    <div style="padding-left: 32px">
+                        @for (detail of keyValue.value.details; track $index) {
+                            <div>
+                                {{ detail }}
+                                <div class="icon-circle">
+                                    <img
+                                        (click)="deleteDetail(keyValue.key, keyValue.value.details, detail)"
+                                        src="/assets/images/baseline-delete_forever-24px.svg"
+                                    />
+                                </div>
+                            </div>
+                        }
+                        <div>
+                            New activity detail:
+                            <input #newDetail type="text" />
+                            <button (click)="updateDetails(keyValue.key, keyValue.value.details, newDetail)">
+                                Add
+                            </button>
+                        </div>
+                    </div>
                 </div>
-              </div>
             }
+            <h3>New Type</h3>
             <div>
-              New activity detail:
-              <input #newDetail type="text" />
-              <button (click)="updateDetails(keyValue.key,keyValue.value.details,newDetail)">Add</button>
+                Add an activity type:
+                <input #newType type="text" />
+                <button (click)="addType(newType)">Add</button>
             </div>
-          </div>
         </div>
-      }
-      <h3>New Type</h3>
-      <div>
-        Add an activity type:
-        <input #newType type="text" />
-        <button (click)="addType(newType)">Add</button>
-      </div>
-    </div>
-  } @else {
-    We couldn't load the type list.
-  }
-
+    } @else {
+        We couldn't load the type list.
+    }
 </div>

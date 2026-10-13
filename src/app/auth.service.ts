@@ -1,10 +1,6 @@
-import { inject, Injectable } from '@angular/core';
+import { computed, inject, Injectable, signal } from '@angular/core';
 
 import { GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut, User } from 'firebase/auth';
-import { map, shareReplay, startWith } from 'rxjs/operators';
-
-import { shareAndCache } from 'http-operators';
-import { Observable } from 'rxjs';
 import { FIREBASE_AUTH } from './firebase';
 
 @Injectable({
@@ -12,43 +8,18 @@ import { FIREBASE_AUTH } from './firebase';
 })
 export class Auth {
     private afAuth = inject(FIREBASE_AUTH);
-    private authState = new Observable<User | null>((subscriber) =>
-        onAuthStateChanged(
-            this.afAuth,
-            (user) => subscriber.next(user),
-            (error) => subscriber.error(error)
-        )
-    );
 
-    uid: Observable<any>;
-    state: Observable<User>;
+    /** The signed in user, null when signed out, or undefined until Firebase restores the session */
+    readonly user = signal<User | null | undefined>(undefined);
+    readonly uid = computed(() => this.user()?.uid ?? null);
 
-
-    latestUid = null;
     constructor() {
-        this.uid = this.authState.pipe(
-            startWith(localStorage['savedCreds']),
-            map(state => {
-                if (state) {
-                    return state.uid;
-                } else {
-                    return null;
-                }
-            }),
-            // tap(n => console.log('uid is', n)),
-            shareReplay(1),
-        );
-        this.uid.subscribe(next => (this.latestUid = next));
-        this.state = this.authState.pipe(shareAndCache('authState'));
+        onAuthStateChanged(this.afAuth, (user) => this.user.set(user));
     }
     login() {
-        signInWithPopup(this.afAuth, new GoogleAuthProvider())
-        .then(credential => {
-            localStorage['savedCreds'] = credential.user.uid;
-        });
+        signInWithPopup(this.afAuth, new GoogleAuthProvider());
     }
     logout() {
         signOut(this.afAuth);
-        localStorage.removeItem('savedCreds');
     }
 }

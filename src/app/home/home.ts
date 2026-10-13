@@ -1,52 +1,35 @@
-import { Component, OnDestroy } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Auth } from '../auth.service';
-import { UserData } from '../user-data.service';
-import { Event } from '../user-data.service';
+import { ChangeDetectionStrategy, Component, effect, inject, input } from '@angular/core';
 import { Title } from '@angular/platform-browser';
-import { Subject } from 'rxjs';
-import { ActivatedRoute } from '@angular/router';
+import { Event, UserData } from '../user-data.service';
 
 @Component({
     selector: 'app-home',
     templateUrl: './home.html',
-    standalone: false
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: false,
 })
 export class Home {
-    // darkTheme: NgxMaterialTimepickerTheme = {
-    //     container: {
-    //         bodyBackgroundColor: '#424242',
-    //         buttonColor: '#fff',
-    //     },
-    //     dial: {
-    //         dialBackgroundColor: '#555',
-    //     },
-    //     clockFace: {
-    //         clockFaceBackgroundColor: '#555',
-    //         clockHandColor: '#9fbd90',
-    //         clockFaceTimeInactiveColor: '#fff',
-    //     },
-    // };
+    userData = inject(UserData);
+
+    /** Family ID from the route */
+    code = input<string>();
 
     editableDateMode = false;
 
-    destroy = new Subject();
-
-    constructor(public auth: Auth, public userData: UserData, title: Title, route: ActivatedRoute) {
-        route.paramMap.pipe(takeUntilDestroyed()).subscribe((paramMap) => {
-            if (paramMap.get('code')) {
-                userData.switchToFamilyId(route.snapshot.params['code']);
+    constructor() {
+        const title = inject(Title);
+        effect(() => {
+            const code = this.code();
+            if (code) {
+                this.userData.switchToFamilyId(code);
             }
         });
+        effect(() => title.setTitle(`${this.userData.child() || ''} Baby Log`.trim()));
+    }
 
-        // Can't do this until the service is setup
-        userData.eventSource.pipe(takeUntilDestroyed()).subscribe((source) => {
-            if (userData.child) {
-                title.setTitle(userData.child + ' Baby Log');
-            } else {
-                title.setTitle('Baby Log');
-            }
-        });
+    setDetails(day: { value: Event; key: string }, activity: Event['activities'][number], details: string) {
+        activity.activityDetails = details;
+        this.userData.saveEvent(day.key, day.value);
     }
 
     note(day: { value: Event; key: string }, activityIndex: number) {

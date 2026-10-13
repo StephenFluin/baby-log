@@ -1,5 +1,5 @@
 <div class="toolbar">
-  <span i18n>
+    <span i18n>
         <a routerLink="/">Baby Log</a>
         <button [matMenuTriggerFor]="types">
             <svg style="width: 24px; height: 24px;" viewBox="0 0 24 24">
@@ -16,46 +16,40 @@
             <a mat-menu-item routerLink="/family">
                 <span>Manage Family</span>
             </a>
-            <a mat-menu-item  [matMenuTriggerFor]="childrenHistory">
+            <a mat-menu-item [matMenuTriggerFor]="childrenHistory">
                 <span>History</span>
             </a>
-
         </mat-menu>
 
         <mat-menu #children="matMenu">
-            @for (child of userData.connectedFamilies; track child) {
-<a mat-menu-item (click)="switchTo(child)">{{
-                child.name
-            }}</a>
-}
+            @for (child of userData.connectedFamilies(); track child.id) {
+                <a mat-menu-item (click)="switchTo(child)">{{ child.name }}</a>
+            }
         </mat-menu>
 
         <mat-menu #childrenHistory="matMenu">
-            @for (child of userData.connectedFamilies; track child) {
-<a mat-menu-item (click)="showHistoryOf(child)">{{
-                child.name
-            }}</a>
-}
+            @for (child of userData.connectedFamilies(); track child.id) {
+                <a mat-menu-item (click)="showHistoryOf(child)">{{ child.name }}</a>
+            }
         </mat-menu>
     </span>
-  <div class="user-details">
-    @if (auth.state | async; as state) {
-      <img class="user-img" [src]="state.photoURL" />
-    }
-    <button (click)="auth.logout()" i18n>Logout</button>
-  </div>
+    <div class="user-details">
+        @if (auth.user(); as user) {
+            <img class="user-img" [src]="user.photoURL" />
+        }
+        <button (click)="auth.logout()" i18n>Logout</button>
+    </div>
 </div>
 <div style="height: 5px;">
-  @if (userData.status !== 'ready') {
-    <progress></progress>
-  }
+    @if (auth.user() === undefined || (auth.user() && userData.status() !== 'ready')) {
+        <progress></progress>
+    }
 </div>
-@if (auth.state | async; as state) {
-  <router-outlet></router-outlet>
-} @else {
-  <div class="main">
-    <h1 i18n>Login to use the baby log</h1>
-    <button (click)="auth.login()" i18n>Login</button>
-  </div>
+@if (auth.user()) {
+    <router-outlet></router-outlet>
+} @else if (auth.user() === null) {
+    <div class="main">
+        <h1 i18n>Login to use the baby log</h1>
+        <button (click)="auth.login()" i18n>Login</button>
+    </div>
 }
-

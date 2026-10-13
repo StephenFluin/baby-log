@@ -1,35 +1,34 @@
-import { Component } from '@angular/core';
-import { Auth } from './auth.service';
-import { UserData } from './user-data.service';
-import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { NavigationEnd, Router } from '@angular/router';
 import { filter } from 'rxjs/operators';
+import { Auth } from './auth.service';
+import { ConnectedFamily, UserData } from './user-data.service';
 
 declare var ga: any;
 
 @Component({
     selector: 'app-root',
     templateUrl: './app.component.html',
-    standalone: false
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: false,
 })
 export class AppComponent {
-    constructor(
-        public auth: Auth,
-        public userData: UserData,
-        public router: Router,
-        public activatedRoute: ActivatedRoute
-    ) {
-        router.events
+    auth = inject(Auth);
+    userData = inject(UserData);
+    private router = inject(Router);
+
+    constructor() {
+        this.router.events
             .pipe(filter((e) => e instanceof NavigationEnd))
             .subscribe((n: NavigationEnd) => {
-                const pageTitle = router.routerState.snapshot.root.children[0].data['title'];
                 ga('send', 'pageview', n.urlAfterRedirects);
             });
     }
-    switchTo(child: { id: string; name: string }) {
+    switchTo(child: ConnectedFamily) {
         // Use a URL instead of switching directly
         this.router.navigate(['child', child.id, child.name]);
     }
-    showHistoryOf(child: { id: string; name: string }) {
+    showHistoryOf(child: ConnectedFamily) {
         // Use a URL instead of switching directly
         this.router.navigate(['child', child.id, child.name, 'history']);
     }

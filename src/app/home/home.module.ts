@@ -1,14 +1,14 @@
 import { NgModule } from '@angular/core';
 import { Home } from './home';
 import { NgxMatTimepickerModule } from 'ngx-mat-timepicker';
-import { TypeMapPipe } from './type-map.pipe';
 import { SummarizeEventPipe } from './summarize-event.pipe';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { History } from '../history';
+import { ShareFooter } from '../share-footer';
 
 @NgModule({
-    declarations: [Home, History, TypeMapPipe, SummarizeEventPipe],
+    declarations: [Home, History, ShareFooter, SummarizeEventPipe],
     imports: [
         CommonModule,
         RouterModule.forChild([

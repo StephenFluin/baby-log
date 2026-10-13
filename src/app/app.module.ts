@@ -34,7 +34,7 @@ import { History } from './history';
             },
             { path: 'family', component: FamilyComponent },
             { path: 'attach/:code/:name', component: AttachComponent },
-        ]),
+        ], { bindToComponentInputs: true }),
         MatMenuModule,
     ],
     bootstrap: [AppComponent],

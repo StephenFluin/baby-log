@@ -21,7 +21,6 @@
     "@angular/router": "^21.2.25",
     "date-fns": "^2.12.0",
     "firebase": "^13.0.0",
-    "http-operators": "^0.0.3",
     "ngx-mat-timepicker": "^21.0.2",
     "rxjs": "^7.8.1",
     "tslib": "^2.0.0",

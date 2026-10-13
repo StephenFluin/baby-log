@@ -1,6 +1,7 @@
-import { inject, Injectable } from '@angular/core';
+import { computed, effect, inject, Injectable, signal } from '@angular/core';
 import {
     limitToLast,
+    onValue,
     orderByChild,
     push,
     query,
@@ -10,10 +11,7 @@ import {
     update,
 } from 'firebase/database';
 import { Auth } from './auth.service';
-import { FIREBASE_DB, listChanges, objectVal } from './firebase';
-import { switchMap, tap, map, shareReplay } from 'rxjs/operators';
-import { Observable, BehaviorSubject, EMPTY } from 'rxjs';
-import { shareAndCache } from 'http-operators';
+import { FIREBASE_DB, snapshotList } from './firebase';
 
 import { parse, parseISO, formatISO } from 'date-fns';
 
@@ -35,57 +33,69 @@ export interface ActivityType {
     name: string;
     details?: string[];
 }
+export interface ConnectedFamily {
+    id: string;
+    name: string;
+}
 
 @Injectable({
     providedIn: 'root',
 })
 export class UserData {
-    familyId: string;
-    child: string = null;
-    connectedFamilies: { id: string; name: string }[];
-
-    status: 'waiting' | 'ready' = 'waiting';
-    /**
-     * Synchronous local copy of data that we can modify
-     */
-    data: Data;
-    /** Temporary storage for events source, (basically which family the events are stored in)  */
-    eventSource = new BehaviorSubject<Observable<{ key: string; value: Event }[]>>(EMPTY);
-    eventList: Observable<{ key: string; value: Event }[]> = this.eventSource.pipe(
-        switchMap((inner) => inner),
-        tap(() => (this.status = 'ready')),
-        shareAndCache('events')
-    );
-    eventHistory: Observable<Event[]>;
-
-    /** Temporary storage for type source, (basically which family the events are stored in) */
-    typeSource = new BehaviorSubject<Observable<{ key: string; value: ActivityType }[]>>(EMPTY);
-    typeList: Observable<{ key: string; value: ActivityType }[]> = this.typeSource.pipe(
-        switchMap((inner) => inner),
-        shareAndCache('types')
-    );
-
+    private auth = inject(Auth);
     private db = inject(FIREBASE_DB);
 
-    constructor(private auth: Auth) {
-        // Get the user's families from the DB / local storage and save the data synchronously
-        this.auth.uid
-            .pipe(
-                tap((uid) => console.log('User is logged in:', uid)),
-                // We need this so logout triggers emptying of data
-                switchMap((uid) => {
-                    if (!uid) {
-                        return EMPTY;
-                    }
-                    return objectVal<string | { families: { [key: string]: boolean } }>(
-                        ref(this.db, `users/${uid}`)
-                    );
-                }),
-                tap((familyIdOrMap) => {
+    readonly familyId = signal<string | null>(null);
+    readonly child = signal<string | null>(null);
+    /** Names are only EVER stored client side for privacy reasons */
+    readonly connectedFamilies = signal<ConnectedFamily[]>(
+        JSON.parse(localStorage['connectedFamilies'] || '[]')
+    );
+
+    /** The 5 most recent days for the current family, newest first */
+    readonly events = cachedSignal<{ key: string; value: Event }[]>('events');
+    readonly types = cachedSignal<{ key: string; value: ActivityType }[]>('types');
+    /** Whether types have been loaded from the server (rather than from the local cache) */
+    readonly typesLoaded = signal(false);
+    /** Map of activity type name to its detail options */
+    readonly typeDetails = computed(() => {
+        const result: { [name: string]: string[] } = {};
+        for (const type of this.types() || []) {
+            // firebase eats empty arrays, so make sure we remake
+            // them if the data is missing
+            result[type.value.name] = type.value.details || [];
+        }
+        return result;
+    });
+
+    /** A mailto: link inviting someone else to attach the current child to their account */
+    readonly shareLink = computed(() => {
+        const child = this.child() || '';
+        const attachUrl = `https://baby.fluin.io/attach/${encodeURIComponent(
+            this.familyId() || ''
+        )}/${encodeURIComponent(child)}`;
+        const subject = `Baby Log: Add ${child} to your account`;
+        const body = `Here is the link to add ${child} to your Baby Log account:\r\n\r\n${attachUrl}`;
+        return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    });
+
+    private eventsLoaded = signal(false);
+    readonly status = computed(() => (this.eventsLoaded() ? 'ready' : 'waiting'));
+
+    constructor() {
+        // Get the user's families from the DB / local storage and switch to one of them
+        effect((onCleanup) => {
+            const uid = this.auth.uid();
+            if (!uid) {
+                return;
+            }
+            onCleanup(
+                onValue(ref(this.db, `users/${uid}`), (snapshot) => {
+                    const familyIdOrMap: string | { families: { [key: string]: boolean } } =
+                        snapshot.val();
                     if (typeof familyIdOrMap === 'string') {
                         this.switchToFamilyId(familyIdOrMap);
                     } else {
-                        console.log('defaulting to lastfamily, or first entry in', familyIdOrMap);
                         const id =
                             localStorage['lastFamilyId'] ||
                             Object.keys(familyIdOrMap?.families || {})[0] ||
@@ -93,11 +103,44 @@ export class UserData {
                         this.switchToFamilyId(id);
                     }
                 })
-            )
-            .subscribe((next) => {
-                // One global subscription just to make the above work and populate our events
+            );
+        });
+
+        // Keep events and types in sync with the current family
+        effect((onCleanup) => {
+            const familyId = this.familyId();
+            if (!familyId) {
+                return;
+            }
+            const eventsQuery = query(
+                ref(this.db, `families/${familyId}/events`),
+                orderByChild('date'),
+                limitToLast(5)
+            );
+            const unsubscribeEvents = onValue(eventsQuery, (snapshot) => {
+                this.events.set(sortEvents(snapshotList<Event>(snapshot)));
+                this.eventsLoaded.set(true);
             });
-        this.connectedFamilies = JSON.parse(localStorage['connectedFamilies'] || '[]');
+            const unsubscribeTypes = onValue(ref(this.db, `families/${familyId}/types`), (snapshot) => {
+                this.types.set(snapshotList<ActivityType>(snapshot));
+                this.typesLoaded.set(true);
+            });
+            onCleanup(() => {
+                unsubscribeEvents();
+                unsubscribeTypes();
+            });
+        });
+    }
+
+    /**
+     * Watch every event for a family, newest first
+     * @returns a function that stops watching
+     */
+    watchHistory(familyId: string, callback: (events: Event[]) => void) {
+        return onValue(
+            query(ref(this.db, `families/${familyId}/events`), orderByChild('date')),
+            (snapshot) => callback(snapshotList<Event>(snapshot).map((item) => item.value).reverse())
+        );
     }
 
     /**
@@ -108,18 +151,13 @@ export class UserData {
         if (!id) {
             id = await this.createMissingFamily();
         }
-        this.connectedFamilies.push({ id, name });
+        this.connectedFamilies.update((families) => [...families, { id, name }]);
         // First create permissions on the new family
         const newFamilyPermissions = {};
-        for (const family of this.connectedFamilies) {
+        for (const family of this.connectedFamilies()) {
             newFamilyPermissions[family.id] = true;
         }
-        await set(ref(this.db, `/users/${this.auth.latestUid}/families`), newFamilyPermissions);
-        console.log(
-            `/users/${this.auth.latestUid}/families`,
-            'updated to say',
-            newFamilyPermissions
-        );
+        await set(ref(this.db, `/users/${this.auth.uid()}/families`), newFamilyPermissions);
 
         // Then update UI and render
         this.saveConnectedFamilies();
@@ -127,14 +165,31 @@ export class UserData {
     }
 
     nameChild(name: string) {
-        this.connectNewFamily(this.familyId, name);
+        this.connectNewFamily(this.familyId(), name);
+    }
+
+    renameChild(child: ConnectedFamily, name: string) {
+        this.connectedFamilies.update((families) =>
+            families.map((family) => (family === child ? { ...family, name } : family))
+        );
+        this.saveConnectedFamilies();
+    }
+
+    detachChild(child: ConnectedFamily) {
+        this.connectedFamilies.update((families) => families.filter((family) => family !== child));
+        this.saveConnectedFamilies();
+
+        // Make sure we don't keep a deleted child selected
+        if (this.child() === child.name) {
+            this.switchToFamilyId(this.connectedFamilies()[0].id);
+        }
     }
 
     /**
      * Save changes to local storage
      */
     saveConnectedFamilies() {
-        localStorage['connectedFamilies'] = JSON.stringify(this.connectedFamilies);
+        localStorage['connectedFamilies'] = JSON.stringify(this.connectedFamilies());
     }
 
     /**
@@ -143,21 +198,16 @@ export class UserData {
      * Or when a user is adding a child to their profile.
      */
     async createMissingFamily() {
-        console.log('Creating a brand new family!');
-        const key = newPushId();
-        console.log('using key', key);
-        await set(ref(this.db, `users/${this.auth.latestUid}/families/${key}`), true);
+        const key = push(ref(this.db, 'families')).key;
+        await set(ref(this.db, `users/${this.auth.uid()}/families/${key}`), true);
         await set(ref(this.db, `families/${key}/`), { creationDate: localeIsoString(new Date()) });
-        console.log('family created (' + key + '), permissions should be good to go!');
         return key;
     }
     async switchToFamilyId(familyId: string) {
-        console.log('rendering family', familyId);
         // Let's see if the user gave this person a name!
-        // Names are only EVER stored client side for privacy reasons
-        const child = this.connectedFamilies.find((family) => family.id === familyId);
+        const child = this.connectedFamilies().find((family) => family.id === familyId);
         if (child) {
-            this.child = child.name;
+            this.child.set(child.name);
         }
         // If user doesn't have a family, let's give them one!
         if (!familyId) {
@@ -165,56 +215,22 @@ export class UserData {
         }
 
         localStorage['lastFamilyId'] = familyId;
-        this.familyId = familyId;
-
-        const eventsRef = ref(this.db, `families/${familyId}/events`);
-        this.eventHistory = listChanges<Event>(query(eventsRef, orderByChild('date'))).pipe(
-            map((list) => list.map((item) => item.value).reverse())
-        );
-
-        // Save a new event source based on the current family
-        this.eventSource.next(
-            listChanges<Event>(query(eventsRef, orderByChild('date'), limitToLast(5))).pipe(
-                map((items) =>
-                    items
-                        .map((value) => {
-                            if (!value.value.activities) {
-                                value.value.activities = [];
-                            }
-                            return value;
-                        })
-                        // Sort date ascending, bigger days break ties
-                        .sort((a, b) =>
-                            a.value.date > b.value.date
-                                ? -1
-                                : a.value.date === b.value.date &&
-                                  a.value.activities.length > b.value.activities.length
-                                ? -1
-                                : 1
-                        )
-                )
-            )
-        );
-        this.typeSource.next(
-            listChanges<ActivityType>(ref(this.db, `families/${familyId}/types`)).pipe(
-                shareReplay(1)
-            )
-        );
+        this.familyId.set(familyId);
     }
 
     saveEvent(key: string, data: Event) {
-        update(ref(this.db, `families/${this.familyId}/events/${key}`), data);
+        update(ref(this.db, `families/${this.familyId()}/events/${key}`), data);
     }
 
     createEvent() {
-        push(ref(this.db, `families/${this.familyId}/events`), {
+        push(ref(this.db, `families/${this.familyId()}/events`), {
             date: localeIsoString(new Date()).substr(0, 10),
             activities: [],
         });
     }
     deleteEvent(key) {
         if (confirm('Are you sure you want to delete this day?')) {
-            remove(ref(this.db, `families/${this.familyId}/events/${key}`));
+            remove(ref(this.db, `families/${this.familyId()}/events/${key}`));
         }
     }
     addActivity(
@@ -245,16 +261,13 @@ export class UserData {
         }
     }
 
-    updateTime(eventKey: string, event: Event, activity, newValue: string, domEvent: Event) {
+    updateTime(eventKey: string, event: Event, activity, newValue: string) {
         // Format the time as a date, and swap the last 11 chars of the original
         const nt = parse(newValue, 'h:mm a', parseISO(activity.time));
-        // console.log('new datetime is ', nt);
         activity.time = localeIsoString(nt).substring(0, 16);
-        // console.log('setting activity time to the first 16 chars of this', activity.time);
         this.updateEvent(eventKey, event);
     }
     updateDate(eventKey: string, event: Event, activity, change: number) {
-        console.log(activity, change);
         activity.time = localeIsoString(
             new Date(new Date(activity.time).valueOf() + change * 24 * 60 * 60 * 1000)
         ).substring(0, 16);
@@ -273,85 +286,62 @@ export class UserData {
                 return 1;
             }
         });
-        // console.log('saving event',event,eventKey);
         this.saveEvent(eventKey, event);
     }
 
-    join(uid, familyId) {
-        set(ref(this.db, `users/${uid}`), familyId);
-        window.location.reload();
-    }
-
     addType(type: ActivityType) {
-        push(ref(this.db, `families/${this.familyId}/types`), type);
+        push(ref(this.db, `families/${this.familyId()}/types`), type);
     }
 
     removeType(typeId: string) {
-        remove(ref(this.db, `families/${this.familyId}/types/${typeId}`));
+        remove(ref(this.db, `families/${this.familyId()}/types/${typeId}`));
     }
 
     updateTypeDetail(typeId: string, newDetail: string[]) {
-        const path = `families/${this.familyId}/types/${typeId}/details`;
-        console.log('updating', path, 'with', newDetail);
-        set(ref(this.db, path), newDetail)
-            .then(() => console.log('done updating details'))
-            .catch((err) => console.log(err, 'when updating details'));
+        const path = `families/${this.familyId()}/types/${typeId}/details`;
+        set(ref(this.db, path), newDetail).catch((err) =>
+            console.log(err, 'when updating details')
+        );
     }
 }
+
+/**
+ * A signal that starts with the last value stored in localStorage and stores every new value
+ */
+function cachedSignal<T>(cacheKey: string) {
+    let cachedValue: T | null = null;
+    try {
+        cachedValue = JSON.parse(localStorage[cacheKey]);
+    } catch (parseException) {}
+    const value = signal<T | null>(cachedValue);
+    effect(() => {
+        const next = value();
+        if (next !== null) {
+            localStorage[cacheKey] = JSON.stringify(next);
+        }
+    });
+    return value;
+}
+
+/** Sort date descending, bigger days break ties */
+function sortEvents(events: { key: string; value: Event }[]) {
+    for (const event of events) {
+        if (!event.value.activities) {
+            event.value.activities = [];
+        }
+    }
+    return events.sort((a, b) =>
+        a.value.date > b.value.date
+            ? -1
+            : a.value.date === b.value.date && a.value.activities.length > b.value.activities.length
+            ? -1
+            : 1
+    );
+}
+
 /**
  * Returns a string that looks like 2020-01-02T17:53-08:00
  */
 export function localeIsoString(date: Date) {
     return formatISO(date, { representation: 'complete' });
-}
-
-export function newPushId() {
-    // Modeled after base64 web-safe chars, but ordered by ASCII.
-    const PUSH_CHARS = '-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz';
-
-    // Timestamp of last push, used to prevent local collisions if you push twice in one ms.
-    let lastPushTime = 0;
-
-    // We generate 72-bits of randomness which get turned into 12 characters and appended to the
-    // timestamp to prevent collisions with other clients.  We store the last characters we
-    // generated because in the event of a collision, we'll use those same characters except
-    // "incremented" by one.
-    const lastRandChars = [];
-
-    let now = new Date().getTime();
-    const duplicateTime = now === lastPushTime;
-    lastPushTime = now;
-
-    const timeStampChars = new Array(8);
-    for (let i = 7; i >= 0; i--) {
-        timeStampChars[i] = PUSH_CHARS.charAt(now % 64);
-        // NOTE: Can't use << here because javascript will convert to int and lose the upper bits.
-        now = Math.floor(now / 64);
-    }
-    if (now !== 0) {
-        throw new Error('We should have converted the entire timestamp.');
-    }
-
-    let id = timeStampChars.join('');
-
-    if (!duplicateTime) {
-        for (let i = 0; i < 12; i++) {
-            lastRandChars[i] = Math.floor(Math.random() * 64);
-        }
-    } else {
-        // If the timestamp hasn't changed since last push, use the same random number, except incremented by 1.
-        let i;
-        for (i = 11; i >= 0 && lastRandChars[i] === 63; i--) {
-            lastRandChars[i] = 0;
-        }
-        lastRandChars[i]++;
-    }
-    for (let i = 0; i < 12; i++) {
-        id += PUSH_CHARS.charAt(lastRandChars[i]);
-    }
-    if (id.length !== 20) {
-        throw new Error('Length should be 20.');
-    }
-
-    return id;
 }
