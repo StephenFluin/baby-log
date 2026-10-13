@@ -45,5 +45,12 @@
     "tabWidth": 4,
     "singleQuote": true,
     "printWidth": 100
+  },
+  "overrides": {
+    "@grpc/grpc-js": "^1.14.6",
+    "basic-ftp": "^6.2.3",
+    "gaxios": {
+      "uuid": "^11.1.1"
+    }
   }
 }
