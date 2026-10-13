@@ -47,14 +47,14 @@ export class UserData {
 
     readonly familyId = signal<string | null>(null);
     readonly child = signal<string | null>(null);
-    /** Names are only EVER stored client side for privacy reasons */
-    readonly connectedFamilies = signal<ConnectedFamily[]>(
-        JSON.parse(localStorage['connectedFamilies'] || '[]')
-    );
+    /** Names are only EVER stored client side (per user) for privacy reasons */
+    readonly connectedFamilies = signal<ConnectedFamily[]>([]);
+    /** Families the user has access to on the server */
+    private serverFamilyIds: string[] = [];
 
     /** The 5 most recent days for the current family, newest first */
-    readonly events = cachedSignal<{ key: string; value: Event }[]>('events');
-    readonly types = cachedSignal<{ key: string; value: ActivityType }[]>('types');
+    readonly events = signal<{ key: string; value: Event }[] | null>(null);
+    readonly types = signal<{ key: string; value: ActivityType }[] | null>(null);
     /** Whether types have been loaded from the server (rather than from the local cache) */
     readonly typesLoaded = signal(false);
     /** Map of activity type name to its detail options */
@@ -83,26 +83,39 @@ export class UserData {
     readonly status = computed(() => (this.eventsLoaded() ? 'ready' : 'waiting'));
 
     constructor() {
+        // Older versions cached the Firebase user (including tokens) and unscoped data here
+        for (const key of ['authState', 'savedCreds', 'events', 'types']) {
+            localStorage.removeItem(key);
+        }
+
         // Get the user's families from the DB / local storage and switch to one of them
         effect((onCleanup) => {
             const uid = this.auth.uid();
+            this.resetState();
             if (!uid) {
                 return;
             }
+            this.adoptUnscopedStorage(uid);
+            this.connectedFamilies.set(JSON.parse(this.userStorage('connectedFamilies') || '[]'));
             onCleanup(
-                onValue(ref(this.db, `users/${uid}`), (snapshot) => {
-                    const familyIdOrMap: string | { families: { [key: string]: boolean } } =
-                        snapshot.val();
-                    if (typeof familyIdOrMap === 'string') {
-                        this.switchToFamilyId(familyIdOrMap);
-                    } else {
-                        const id =
-                            localStorage['lastFamilyId'] ||
-                            Object.keys(familyIdOrMap?.families || {})[0] ||
-                            null;
-                        this.switchToFamilyId(id);
-                    }
-                })
+                onValue(
+                    ref(this.db, `users/${uid}`),
+                    (snapshot) => {
+                        const familyIdOrMap: string | { families: { [key: string]: boolean } } =
+                            snapshot.val();
+                        this.serverFamilyIds =
+                            typeof familyIdOrMap === 'string'
+                                ? [familyIdOrMap]
+                                : Object.keys(familyIdOrMap?.families || {});
+                        const lastFamilyId = this.userStorage('lastFamilyId');
+                        this.switchToFamilyId(
+                            this.serverFamilyIds.includes(lastFamilyId)
+                                ? lastFamilyId
+                                : this.serverFamilyIds[0] || null
+                        );
+                    },
+                    (error) => console.error('Unable to load families', error)
+                )
             );
         });
 
@@ -112,19 +125,35 @@ export class UserData {
             if (!familyId) {
                 return;
             }
+            this.eventsLoaded.set(false);
+            this.typesLoaded.set(false);
+            this.events.set(readCache(`events:${familyId}`));
+            this.types.set(readCache(`types:${familyId}`));
             const eventsQuery = query(
                 ref(this.db, `families/${familyId}/events`),
                 orderByChild('date'),
                 limitToLast(5)
             );
-            const unsubscribeEvents = onValue(eventsQuery, (snapshot) => {
-                this.events.set(sortEvents(snapshotList<Event>(snapshot)));
-                this.eventsLoaded.set(true);
-            });
-            const unsubscribeTypes = onValue(ref(this.db, `families/${familyId}/types`), (snapshot) => {
-                this.types.set(snapshotList<ActivityType>(snapshot));
-                this.typesLoaded.set(true);
-            });
+            const unsubscribeEvents = onValue(
+                eventsQuery,
+                (snapshot) => {
+                    const events = sortEvents(snapshotList<Event>(snapshot));
+                    this.events.set(events);
+                    this.eventsLoaded.set(true);
+                    writeCache(`events:${familyId}`, events);
+                },
+                (error) => console.error('Unable to load events', error)
+            );
+            const unsubscribeTypes = onValue(
+                ref(this.db, `families/${familyId}/types`),
+                (snapshot) => {
+                    const types = snapshotList<ActivityType>(snapshot);
+                    this.types.set(types);
+                    this.typesLoaded.set(true);
+                    writeCache(`types:${familyId}`, types);
+                },
+                (error) => console.error('Unable to load types', error)
+            );
             onCleanup(() => {
                 unsubscribeEvents();
                 unsubscribeTypes();
@@ -153,11 +182,7 @@ export class UserData {
         }
         this.connectedFamilies.update((families) => [...families, { id, name }]);
         // First create permissions on the new family
-        const newFamilyPermissions = {};
-        for (const family of this.connectedFamilies()) {
-            newFamilyPermissions[family.id] = true;
-        }
-        await set(ref(this.db, `/users/${this.auth.uid()}/families`), newFamilyPermissions);
+        await this.grantFamilyAccess(id);
 
         // Then update UI and render
         this.saveConnectedFamilies();
@@ -175,21 +200,66 @@ export class UserData {
         this.saveConnectedFamilies();
     }
 
-    detachChild(child: ConnectedFamily) {
+    async detachChild(child: ConnectedFamily) {
         this.connectedFamilies.update((families) => families.filter((family) => family !== child));
         this.saveConnectedFamilies();
 
         // Make sure we don't keep a deleted child selected
-        if (this.child() === child.name) {
-            this.switchToFamilyId(this.connectedFamilies()[0].id);
+        if (this.familyId() === child.id) {
+            await this.switchToFamilyId(
+                this.serverFamilyIds.find((familyId) => familyId !== child.id) || null
+            );
         }
+        // Then revoke this user's access to the child's log
+        await remove(ref(this.db, `users/${this.auth.uid()}/families/${child.id}`));
     }
 
     /**
      * Save changes to local storage
      */
     saveConnectedFamilies() {
-        localStorage['connectedFamilies'] = JSON.stringify(this.connectedFamilies());
+        this.setUserStorage('connectedFamilies', JSON.stringify(this.connectedFamilies()));
+    }
+
+    /**
+     * Give the user access to a family, keeping access to existing ones
+     * (including a legacy single family ID stored directly on the user)
+     */
+    private grantFamilyAccess(familyId: string) {
+        const permissions = { [familyId]: true };
+        for (const existingId of this.serverFamilyIds) {
+            permissions[existingId] = true;
+        }
+        return update(ref(this.db, `users/${this.auth.uid()}/families`), permissions);
+    }
+
+    private resetState() {
+        this.serverFamilyIds = [];
+        this.familyId.set(null);
+        this.child.set(null);
+        this.connectedFamilies.set([]);
+        this.events.set(null);
+        this.types.set(null);
+        this.eventsLoaded.set(false);
+        this.typesLoaded.set(false);
+    }
+
+    /** Reads a localStorage value that belongs to the signed in user */
+    private userStorage(key: string): string | null {
+        return localStorage.getItem(`${key}:${this.auth.uid()}`);
+    }
+    private setUserStorage(key: string, value: string) {
+        localStorage.setItem(`${key}:${this.auth.uid()}`, value);
+    }
+    /** Older versions stored child names without a user, so give them to the first user to sign in */
+    private adoptUnscopedStorage(uid: string) {
+        for (const key of ['connectedFamilies', 'lastFamilyId']) {
+            const value = localStorage.getItem(key);
+            if (value !== null) {
+                localStorage.setItem(`${key}:${uid}`, value);
+                localStorage.removeItem(key);
+            }
+        }
     }
 
     /**
@@ -199,22 +269,20 @@ export class UserData {
      */
     async createMissingFamily() {
         const key = push(ref(this.db, 'families')).key;
-        await set(ref(this.db, `users/${this.auth.uid()}/families/${key}`), true);
+        await this.grantFamilyAccess(key);
         await set(ref(this.db, `families/${key}/`), { creationDate: localeIsoString(new Date()) });
         return key;
     }
     async switchToFamilyId(familyId: string) {
         // Let's see if the user gave this person a name!
         const child = this.connectedFamilies().find((family) => family.id === familyId);
-        if (child) {
-            this.child.set(child.name);
-        }
+        this.child.set(child?.name ?? null);
         // If user doesn't have a family, let's give them one!
         if (!familyId) {
             familyId = await this.createMissingFamily();
         }
 
-        localStorage['lastFamilyId'] = familyId;
+        this.setUserStorage('lastFamilyId', familyId);
         this.familyId.set(familyId);
     }
 
@@ -305,22 +373,16 @@ export class UserData {
     }
 }
 
-/**
- * A signal that starts with the last value stored in localStorage and stores every new value
- */
-function cachedSignal<T>(cacheKey: string) {
-    let cachedValue: T | null = null;
+function readCache<T>(cacheKey: string): T | null {
     try {
-        cachedValue = JSON.parse(localStorage[cacheKey]);
-    } catch (parseException) {}
-    const value = signal<T | null>(cachedValue);
-    effect(() => {
-        const next = value();
-        if (next !== null) {
-            localStorage[cacheKey] = JSON.stringify(next);
-        }
-    });
-    return value;
+        return JSON.parse(localStorage.getItem(cacheKey) ?? 'null');
+    } catch (parseException) {
+        return null;
+    }
+}
+
+function writeCache(cacheKey: string, value: unknown) {
+    localStorage.setItem(cacheKey, JSON.stringify(value));
 }
 
 /** Sort date descending, bigger days break ties */
