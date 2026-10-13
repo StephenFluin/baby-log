@@ -254,3 +254,33 @@ button {
 button.activity-type {
     background-color: #406e8e !important;
 }
+
+// Icon-only buttons
+button.icon-circle {
+    height: auto;
+    border-radius: 100%;
+    padding: 6px;
+}
+.day-container h2 button.icon-circle {
+    margin-left: 4px;
+}
+
+// Menu items are buttons too, so undo the global button styles
+button.mat-mdc-menu-item {
+    background-color: transparent !important;
+    font-size: var(--mat-menu-item-label-text-size, 14px);
+    font-weight: normal;
+    height: auto;
+    margin-left: 0 !important;
+    border-radius: 0;
+    justify-content: flex-start;
+}
+
+:focus-visible {
+    outline: 2px solid #4c9ae4;
+    outline-offset: 2px;
+}
+
+label {
+    margin-right: 8px;
+}

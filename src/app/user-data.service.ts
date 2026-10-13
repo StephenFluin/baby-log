@@ -297,9 +297,7 @@ export class UserData {
         });
     }
     deleteEvent(key: string) {
-        if (confirm('Are you sure you want to delete this day?')) {
-            remove(ref(this.db, `families/${this.familyId()}/events/${key}`));
-        }
+        remove(ref(this.db, `families/${this.familyId()}/events/${key}`));
     }
     addActivity(eventKey: string, event: Event, activity: string, activityDetails: string) {
         if (!event.activities) {
@@ -313,14 +311,8 @@ export class UserData {
         this.saveEvent(eventKey, event);
     }
     deleteActivity(eventKey: string, event: Event, activityIndex: number) {
-        if (
-            confirm(
-                `Are you sure you want to delete this '${event.activities[activityIndex].activity}' entry?`
-            )
-        ) {
-            event.activities.splice(activityIndex, 1);
-            this.saveEvent(eventKey, event);
-        }
+        event.activities.splice(activityIndex, 1);
+        this.saveEvent(eventKey, event);
     }
 
     updateTime(eventKey: string, event: Event, activity: Activity, newValue: string) {
@@ -380,7 +372,7 @@ function writeCache(cacheKey: string, value: unknown) {
 }
 
 /** Sort date descending, bigger days break ties */
-function sortEvents(events: { key: string; value: Event }[]) {
+export function sortEvents(events: { key: string; value: Event }[]) {
     for (const event of events) {
         if (!event.value.activities) {
             event.value.activities = [];

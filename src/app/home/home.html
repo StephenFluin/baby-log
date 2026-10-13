@@ -15,20 +15,23 @@
                     <p>
                         We created this log for you, you can give the baby a name if you want. This
                         name is only stored locally on your device:
-                        <input #childName placeholder="Name" type="text" autocomplete="off" /><button
-                            (click)="addName(childName.value)"
-                        >
-                            Save
-                        </button>
+                        <input
+                            #childName
+                            placeholder="Name"
+                            aria-label="Baby's name"
+                            type="text"
+                            autocomplete="off"
+                        /><button type="button" (click)="addName(childName.value)">Save</button>
                     </p>
                 }
             </div>
         }
         <button
+            type="button"
             class="button-standard button-icon-combo button-important"
             (click)="userData.createEvent()"
         >
-            <img src="../assets/images/baseline-add-24px.svg" height="20px" width="20px" />
+            <img src="../assets/images/baseline-add-24px.svg" height="20px" width="20px" alt="" />
             <span>Create New Day</span>
         </button>
 
@@ -36,12 +39,14 @@
             <div class="day-container">
                 <h2>
                     {{ day.value.date }}
-                    <img
-                        (click)="userData.deleteEvent(day.key)"
-                        src="../assets/images/baseline-delete_forever-24px.svg"
-                        height="24px"
-                        width="24px"
-                    />
+                    <button
+                        type="button"
+                        class="icon-circle"
+                        [attr.aria-label]="'Delete ' + day.value.date"
+                        (click)="deleteDay(day.key, day.value.date)"
+                    >
+                        <img src="../assets/images/baseline-delete_forever-24px.svg" alt="" />
+                    </button>
                 </h2>
 
                 <div class="highlight-box">
@@ -56,6 +61,7 @@
                 <div class="activity-buttons">
                     @for (type of userData.types(); track type.key) {
                         <button
+                            type="button"
                             class="activity-type"
                             (click)="userData.addActivity(day.key, day.value, type.value.name, '')"
                         >
@@ -70,6 +76,7 @@
                                 <input
                                     [ngxMatTimepicker]="picker"
                                     [value]="activity.time.substring(11)"
+                                    [attr.aria-label]="'Time of ' + activity.activity"
                                     readonly
                                     style="width: 80px; text-align: center"
                                 />
@@ -82,12 +89,16 @@
                                 <ng-template #dialHint>
                                     <p>
                                         <button
+                                            type="button"
+                                            aria-label="Previous day"
                                             (click)="userData.updateDate(day.key, day.value, activity, -1); picker.close()"
                                         >
                                             &lt;&lt;
                                         </button>
                                         {{ activity.time.substring(0, 10) }}
                                         <button
+                                            type="button"
+                                            aria-label="Next day"
                                             (click)="userData.updateDate(day.key, day.value, activity, 1); picker.close()"
                                         >
                                             &gt;&gt;
@@ -102,6 +113,7 @@
                                         <select
                                             style="width: 100%"
                                             class="custom-select"
+                                            [attr.aria-label]="'Details for ' + activity.activity"
                                             (input)="setDetails(day, activity, $any($event.target).value)"
                                         >
                                             @for (option of options; track option) {
@@ -124,20 +136,24 @@
                                 }
                             </td>
                             <td>
-                                <div class="icon-circle" (click)="note(day, activityIndex)">
-                                    <img src="../assets/images/edit.svg" alt="edit" />
-                                </div>
+                                <button
+                                    type="button"
+                                    class="icon-circle"
+                                    [attr.aria-label]="'Notes for ' + activity.activity"
+                                    (click)="note(day, activityIndex)"
+                                >
+                                    <img src="../assets/images/edit.svg" alt="" />
+                                </button>
                             </td>
                             <td>
-                                <div
+                                <button
+                                    type="button"
                                     class="icon-circle"
-                                    (click)="userData.deleteActivity(day.key, day.value, activityIndex)"
+                                    [attr.aria-label]="'Delete ' + activity.activity"
+                                    (click)="deleteActivity(day, activityIndex)"
                                 >
-                                    <img
-                                        src="../assets/images/baseline-delete_forever-24px.svg"
-                                        alt="delete"
-                                    />
-                                </div>
+                                    <img src="../assets/images/baseline-delete_forever-24px.svg" alt="" />
+                                </button>
                             </td>
                         </tr>
                         @if (activity.notes) {

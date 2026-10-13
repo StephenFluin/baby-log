@@ -3,44 +3,46 @@
     @if (userData.types(); as types) {
         <div>
             @for (keyValue of types; track keyValue.key) {
-                <div>
+                <section>
                     <h3>
                         {{ keyValue.value.name }}
-                        <div class="icon-circle">
-                            <img
-                                (click)="deleteType(keyValue.key)"
-                                src="/assets/images/baseline-delete_forever-24px.svg"
-                            />
-                        </div>
+                        <button
+                            type="button"
+                            class="icon-circle"
+                            [attr.aria-label]="'Delete ' + keyValue.value.name"
+                            (click)="deleteType(keyValue.key, keyValue.value.name)"
+                        >
+                            <img src="/assets/images/baseline-delete_forever-24px.svg" alt="" />
+                        </button>
                     </h3>
                     <div style="padding-left: 32px">
                         @for (detail of keyValue.value.details; track $index) {
                             <div>
                                 {{ detail }}
-                                <div class="icon-circle">
-                                    <img
-                                        (click)="deleteDetail(keyValue.key, keyValue.value.details, detail)"
-                                        src="/assets/images/baseline-delete_forever-24px.svg"
-                                    />
-                                </div>
+                                <button
+                                    type="button"
+                                    class="icon-circle"
+                                    [attr.aria-label]="'Delete ' + detail + ' from ' + keyValue.value.name"
+                                    (click)="deleteDetail(keyValue.key, keyValue.value.details, detail)"
+                                >
+                                    <img src="/assets/images/baseline-delete_forever-24px.svg" alt="" />
+                                </button>
                             </div>
                         }
-                        <div>
-                            New activity detail:
-                            <input #newDetail type="text" />
-                            <button (click)="updateDetails(keyValue.key, keyValue.value.details, newDetail)">
-                                Add
-                            </button>
-                        </div>
+                        <form (submit)="$event.preventDefault(); updateDetails(keyValue.key, keyValue.value.details, newDetail)">
+                            <label [for]="'detail-' + keyValue.key">New {{ keyValue.value.name }} detail:</label>
+                            <input [id]="'detail-' + keyValue.key" #newDetail type="text" />
+                            <button type="submit">Add</button>
+                        </form>
                     </div>
-                </div>
+                </section>
             }
             <h3>New Type</h3>
-            <div>
-                Add an activity type:
-                <input #newType type="text" />
-                <button (click)="addType(newType)">Add</button>
-            </div>
+            <form (submit)="$event.preventDefault(); addType(newType)">
+                <label for="new-type">Add an activity type:</label>
+                <input id="new-type" #newType type="text" />
+                <button type="submit">Add</button>
+            </form>
         </div>
     } @else {
         We couldn't load the type list.

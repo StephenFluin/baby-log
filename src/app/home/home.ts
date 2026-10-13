@@ -1,5 +1,6 @@
 import { Component, effect, inject, input } from '@angular/core';
 import { Title } from '@angular/platform-browser';
+import { Dialogs } from '../dialogs';
 import { Activity, Event, UserData } from '../user-data.service';
 import { RouterLink } from '@angular/router';
 import { NgxMatTimepickerDirective, NgxMatTimepickerComponent } from 'ngx-mat-timepicker';
@@ -19,6 +20,7 @@ import { SummarizeEventPipe } from './summarize-event.pipe';
 })
 export class Home {
     userData = inject(UserData);
+    private dialogs = inject(Dialogs);
 
     /** Family ID from the route */
     code = input<string>();
@@ -41,17 +43,26 @@ export class Home {
         this.userData.saveEvent(day.key, day.value);
     }
 
-    note(day: { value: Event; key: string }, activityIndex: number) {
-        let result;
-        if (!day.value.activities[activityIndex].notes) {
-            result = prompt('Add details to this activity');
-        } else {
-            result = prompt('Replace the notes for this activity');
+    async note(day: { value: Event; key: string }, activityIndex: number) {
+        const activity = day.value.activities[activityIndex];
+        const result = await this.dialogs.prompt(`Notes for ${activity.activity}`, activity.notes);
+        if (result !== null) {
+            activity.notes = result;
+            this.userData.saveEvent(day.key, day.value);
         }
-        if (result) {
-            day.value.activities[activityIndex].notes = result;
+    }
+
+    async deleteDay(key: string, date: string) {
+        if (await this.dialogs.confirm(`Delete everything logged on ${date}?`, 'Delete')) {
+            this.userData.deleteEvent(key);
         }
-        this.userData.saveEvent(day.key, day.value);
+    }
+
+    async deleteActivity(day: { value: Event; key: string }, activityIndex: number) {
+        const activity = day.value.activities[activityIndex];
+        if (await this.dialogs.confirm(`Delete this ${activity.activity} entry?`, 'Delete')) {
+            this.userData.deleteActivity(day.key, day.value, activityIndex);
+        }
     }
 
     addName(name: string) {

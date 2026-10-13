@@ -1,4 +1,5 @@
 import { Component, effect, inject } from '@angular/core';
+import { Dialogs } from '../dialogs';
 import { UserData } from '../user-data.service';
 
 export const DEFAULT_TYPES: Record<string, string[]> = {
@@ -16,6 +17,7 @@ export const DEFAULT_TYPES: Record<string, string[]> = {
 })
 export class ManageTypes {
     userData = inject(UserData);
+    private dialogs = inject(Dialogs);
 
     constructor() {
         effect(() => {
@@ -28,6 +30,9 @@ export class ManageTypes {
         });
     }
     updateDetails(typeId: string, details: string[] | undefined, newDetailBox: HTMLInputElement) {
+        if (!newDetailBox.value.trim()) {
+            return;
+        }
         this.userData.updateTypeDetail(typeId, [...(details || []), newDetailBox.value]);
         newDetailBox.value = '';
     }
@@ -38,10 +43,15 @@ export class ManageTypes {
         );
     }
     addType(newType: HTMLInputElement) {
+        if (!newType.value.trim()) {
+            return;
+        }
         this.userData.addType({ name: newType.value, details: [] });
         newType.value = '';
     }
-    deleteType(typeId: string) {
-        this.userData.removeType(typeId);
+    async deleteType(typeId: string, name: string) {
+        if (await this.dialogs.confirm(`Delete the ${name} type and its details?`, 'Delete')) {
+            this.userData.removeType(typeId);
+        }
     }
 }

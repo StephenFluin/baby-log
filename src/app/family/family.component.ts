@@ -1,4 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
+import { Dialogs } from '../dialogs';
 import { ConnectedFamily, UserData } from '../user-data.service';
 
 @Component({
@@ -14,19 +15,20 @@ import { ConnectedFamily, UserData } from '../user-data.service';
                             <input
                                 type="text"
                                 [value]="child.name"
+                                [attr.aria-label]="'Name of ' + child.name"
                                 (change)="userData.renameChild(child, nameInput.value)"
                                 #nameInput
                             />
                         </td>
                         <td>
-                            <div class="icon-circle">
-                                <img
-                                    (click)="delete(child)"
-                                    src="../assets/images/baseline-delete_forever-24px.svg"
-                                    height="24px"
-                                    width="24px"
-                                />
-                            </div>
+                            <button
+                                type="button"
+                                class="icon-circle"
+                                [attr.aria-label]="'Detach ' + child.name"
+                                (click)="delete(child)"
+                            >
+                                <img src="../assets/images/baseline-delete_forever-24px.svg" alt="" />
+                            </button>
                         </td>
                     </tr>
                 }
@@ -34,24 +36,31 @@ import { ConnectedFamily, UserData } from '../user-data.service';
             <p></p>
 
             @if (!showNew()) {
-                <button (click)="showNew.set(true)">New</button>
+                <button type="button" (click)="showNew.set(true)">New</button>
             } @else {
                 <form (submit)="$event.preventDefault(); create(nameInput.value, code())">
                     <h3>New</h3>
                     <table>
                         <tr>
-                            <td>Child's Name</td>
-                            <td><input type="text" placeholder="Stephen" #nameInput /></td>
+                            <td><label for="new-child-name">Child's Name</label></td>
+                            <td><input id="new-child-name" type="text" placeholder="Stephen" #nameInput /></td>
                         </tr>
                         @if (!showCode()) {
                             <tr>
-                                <td>Shared Child</td>
-                                <td><input type="checkbox" (change)="showCode.set(true)" /></td>
+                                <td><label for="shared-child">Shared Child</label></td>
+                                <td><input id="shared-child" type="checkbox" (change)="showCode.set(true)" /></td>
                             </tr>
                         } @else {
                             <tr>
-                                <td>Shared Child Code</td>
-                                <td><input type="text" (input)="code.set(codeInput.value)" #codeInput /></td>
+                                <td><label for="shared-child-code">Shared Child Code</label></td>
+                                <td>
+                                    <input
+                                        id="shared-child-code"
+                                        type="text"
+                                        (input)="code.set(codeInput.value)"
+                                        #codeInput
+                                    />
+                                </td>
                                 <td colspan="2">
                                     Were you given a code from the bottom of an existing child? Feel
                                     free to leave blank to create a new child.
@@ -67,6 +76,7 @@ import { ConnectedFamily, UserData } from '../user-data.service';
 })
 export class FamilyComponent {
     userData = inject(UserData);
+    private dialogs = inject(Dialogs);
 
     showNew = signal(false);
     showCode = signal(false);
@@ -76,10 +86,11 @@ export class FamilyComponent {
     create(name: string, code: string) {
         this.userData.connectNewFamily(code, name);
     }
-    delete(child: ConnectedFamily) {
+    async delete(child: ConnectedFamily) {
         if (
-            confirm(
-                `Are you sure you want to detach from this child? You can reconnect if you still have the child's code.`
+            await this.dialogs.confirm(
+                `Detach ${child.name}? You can reconnect if you still have the child's code.`,
+                'Detach'
             )
         ) {
             this.userData.detachChild(child);

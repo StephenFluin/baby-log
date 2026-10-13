@@ -1,55 +1,51 @@
-<div class="toolbar">
-    <span>
+<header class="toolbar">
+    <nav>
         <a routerLink="/">Baby Log</a>
-        <button [matMenuTriggerFor]="types">
-            <svg style="width: 24px; height: 24px;" viewBox="0 0 24 24">
+        <button type="button" aria-label="Menu" [matMenuTriggerFor]="types">
+            <svg style="width: 24px; height: 24px;" viewBox="0 0 24 24" aria-hidden="true">
                 <path fill="currentColor" d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z" />
             </svg>
         </button>
         <mat-menu #types="matMenu">
-            <a mat-menu-item routerLink="/types">
-                <span>Manage Types</span>
-            </a>
-            <a mat-menu-item [matMenuTriggerFor]="children">
-                <span>Switch Child</span>
-            </a>
-            <a mat-menu-item routerLink="/family">
-                <span>Manage Family</span>
-            </a>
-            <a mat-menu-item [matMenuTriggerFor]="childrenHistory">
-                <span>History</span>
-            </a>
+            <a mat-menu-item routerLink="/types">Manage Types</a>
+            <button type="button" mat-menu-item [matMenuTriggerFor]="children">Switch Child</button>
+            <a mat-menu-item routerLink="/family">Manage Family</a>
+            <button type="button" mat-menu-item [matMenuTriggerFor]="childrenHistory">History</button>
         </mat-menu>
 
         <mat-menu #children="matMenu">
             @for (child of userData.connectedFamilies(); track child.id) {
-                <a mat-menu-item (click)="switchTo(child)">{{ child.name }}</a>
+                <button type="button" mat-menu-item (click)="switchTo(child)">{{ child.name }}</button>
             }
         </mat-menu>
 
         <mat-menu #childrenHistory="matMenu">
             @for (child of userData.connectedFamilies(); track child.id) {
-                <a mat-menu-item (click)="showHistoryOf(child)">{{ child.name }}</a>
+                <button type="button" mat-menu-item (click)="showHistoryOf(child)">{{ child.name }}</button>
             }
         </mat-menu>
-    </span>
+    </nav>
     <div class="user-details">
         @if (auth.user(); as user) {
-            <img class="user-img" [src]="user.photoURL" />
+            @if (user.photoURL) {
+                <img class="user-img" [src]="user.photoURL" alt="" />
+            }
+            <button type="button" (click)="auth.logout()">Logout</button>
         }
-        <button (click)="auth.logout()">Logout</button>
     </div>
-</div>
+</header>
 <div style="height: 5px;">
     @if (auth.user() === undefined || (auth.user() && userData.status() !== 'ready')) {
-        <progress></progress>
+        <progress aria-label="Loading"></progress>
     }
 </div>
-@if (auth.user()) {
-    <router-outlet></router-outlet>
-} @else if (auth.user() === null) {
-    <div class="main">
-        <h1>Login to use the baby log</h1>
-        <button (click)="auth.login()">Login</button>
-    </div>
-}
+<main>
+    @if (auth.user()) {
+        <router-outlet></router-outlet>
+    } @else if (auth.user() === null) {
+        <div class="main">
+            <h1>Login to use the baby log</h1>
+            <button type="button" (click)="auth.login()">Login</button>
+        </div>
+    }
+</main>
