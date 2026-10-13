@@ -5,15 +5,15 @@ import { Observable } from 'rxjs';
 @Component({
     template: `
         <div class="main">
-            <h2>Manage Family</h2>
-            <p>You've been invited to add a child to your account.</p>
-            <ng-container *ngIf="data | async as data">
-                <p>Name:{{ data.name }}</p>
-                <p>Code: {{ data.code }}</p>
-                <button (click)="attach(data.name, data.code)">Attach</button>
-            </ng-container>
+          <h2>Manage Family</h2>
+          <p>You've been invited to add a child to your account.</p>
+          @if (data | async; as data) {
+            <p>Name:{{ data.name }}</p>
+            <p>Code: {{ data.code }}</p>
+            <button (click)="attach(data.name, data.code)">Attach</button>
+          }
         </div>
-    `,
+        `,
     standalone: false
 })
 export class AttachComponent {

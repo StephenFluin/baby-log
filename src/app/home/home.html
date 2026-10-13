@@ -1,163 +1,178 @@
-<ng-container *ngIf="auth.state | async as state">
-    <div *ngIf="userData.eventList | async as events" class="main">
-        <h1 *ngIf="userData.child">{{userData.child}}</h1>
-        <div *ngIf="events.length < 2">
-            <p>
-                Welcome to the baby log! Double check the
-                <a routerLink="/types" style="text-decoration: underline"
-                    >types of data you want to track</a
-                >, then start a new day to start logging.
+@if (auth.state | async; as state) {
+  @if (userData.eventList | async; as events) {
+    <div class="main">
+      @if (userData.child) {
+        <h1>{{userData.child}}</h1>
+      }
+      @if (events.length < 2) {
+        <div>
+          <p>
+            Welcome to the baby log! Double check the
+            <a routerLink="/types" style="text-decoration: underline"
+              >types of data you want to track</a
+              >, then start a new day to start logging.
             </p>
-            <p *ngIf="!userData.child">
+            @if (!userData.child) {
+              <p>
                 We created this log for you, you can give the baby a name if you want. This name is
                 only stored locally on your device:
                 <input #childName placeholder="Name" type="text" autocomplete="off" /><button
-                    (click)="addName(childName.value)"
+                (click)="addName(childName.value)"
                 >
-                    Save
-                </button>
+                Save
+              </button>
             </p>
+          }
         </div>
-        <button
-            class="button-standard button-icon-combo button-important"
-            (click)="userData.createEvent()"
+      }
+      <button
+        class="button-standard button-icon-combo button-important"
+        (click)="userData.createEvent()"
         >
-            <img src="../assets/images/baseline-add-24px.svg" height="20px" width="20px" />
-            <span i18n>Create New Day</span>
-        </button>
-
-        <div *ngFor="let day of events; index as i" class="day-container">
-            <h2>
-                {{ day.value.date }}
-                <img
-                    (click)="userData.deleteEvent(day.key)"
-                    src="../assets/images/baseline-delete_forever-24px.svg"
-                    height="24px"
-                    width="24px"
-                />
-            </h2>
-
-            <div class="highlight-box">
-                <!-- <ngx-charts-pie-chart [legend]="true" [results]="(day.value | summarizeEvent)['sleepChart']"></ngx-charts-pie-chart> -->
-                <p>
-                    <span i18n>Slept {{(day.value | summarizeEvent)['totalPretty']['asleep']}}</span
-                    ><br />
-                    <span></span>
-                </p>
+        <img src="../assets/images/baseline-add-24px.svg" height="20px" width="20px" />
+        <span i18n>Create New Day</span>
+      </button>
+      @for (day of events; track day; let i = $index) {
+        <div class="day-container">
+          <h2>
+            {{ day.value.date }}
+            <img
+              (click)="userData.deleteEvent(day.key)"
+              src="../assets/images/baseline-delete_forever-24px.svg"
+              height="24px"
+              width="24px"
+              />
+          </h2>
+          <div class="highlight-box">
+            <!-- <ngx-charts-pie-chart [legend]="true" [results]="(day.value | summarizeEvent)['sleepChart']"></ngx-charts-pie-chart> -->
+            <p>
+              <span i18n>Slept {{(day.value | summarizeEvent)['totalPretty']['asleep']}}</span
+                ><br />
+                <span></span>
+              </p>
             </div>
-
             <div class="activity-buttons">
+              @for (type of userData.typeList | async; track type) {
                 <button
-                    class="activity-type"
-                    *ngFor="let type of userData.typeList | async"
-                    (click)="userData.addActivity(day.key, day.value, type.value.name ,'')"
-                >
-                    {{type.value.name}}
+                  class="activity-type"
+                  (click)="userData.addActivity(day.key, day.value, type.value.name ,'')"
+                  >
+                  {{type.value.name}}
                 </button>
+              }
             </div>
             <table style="max-width: 500px">
-                <ng-container *ngFor="let activity of day.value.activities; index as activityIndex">
-                    <tr>
-                        <td>
-                            <input
-                                [ngxMatTimepicker]="picker"
-                                [value]="activity.time.substring(11)"
-                                readonly
-                                style="width: 80px; text-align: center"
-                            />
-                            <ngx-mat-timepicker
-                                #picker
-                                [editableHintTmpl]="dialHint"
-                                [enableKeyboardInput]="editableDateMode"
-                                [theme]="darkTheme"
+              @for (activity of day.value.activities; track activity; let activityIndex = $index) {
+                <tr>
+                  <td>
+                    <input
+                      [ngxMatTimepicker]="picker"
+                      [value]="activity.time.substring(11)"
+                      readonly
+                      style="width: 80px; text-align: center"
+                      />
+                    <ngx-mat-timepicker
+                      #picker
+                      [editableHintTmpl]="dialHint"
+                      [enableKeyboardInput]="editableDateMode"
+                      [theme]="darkTheme"
                                 (timeSet)="userData.updateTime(
                                 day.key,
                                 day.value,
                                 day.value.activities[activityIndex],
                                 $event)"
-                            ></ngx-mat-timepicker>
-                            <ng-template #dialHint>
-                                <p>
-                                    <button
-                                        (click)="userData.updateDate(day.key,day.value,day.value.activities[activityIndex], -1);picker.close();"
-                                    >
-                                        &lt;&lt;
-                                    </button>
-                                    {{activity.time.substring(0,10)}}
-                                    <button
-                                        (click)="userData.updateDate(day.key,day.value,day.value.activities[activityIndex], 1);picker.close();"
-                                    >
-                                        &gt;&gt;
-                                    </button>
-                                </p>
-                            </ng-template>
-                        </td>
-                        <td>{{ activity.activity }}</td>
-                        <td style="width: 100%">
-                            <div *ngIf="userData.typeList | async | typeMap as types">
-                                <select
-                                    style="width: 100%"
-                                    class="custom-select"
-                                    *ngIf="types[activity.activity] && types[activity.activity].length; else raw"
-                                    (input)="activity.activityDetails = $event.target.value;userData.saveEvent(day.key, day.value)"
-                                >
-                                    <option
-                                        *ngFor="let option of types[activity.activity]"
-                                        [selected]="option === activity.activityDetails"
-                                    >
-                                        {{option}}
-                                    </option>
-                                    <option
-                                        *ngIf="types[activity.activity] && types[activity.activity].indexOf(activity.activityDetails) === -1 && activity.activityDetails"
-                                    >
-                                        {{activity.activityDetails}}
-                                    </option>
-                                </select>
-                            </div>
-                            <ng-template #raw>{{activity.activityDetails}}</ng-template>
-                        </td>
-                        <td>
-                            <div class="icon-circle" (click)="note(day, activityIndex)">
-                                <img src="../assets/images/edit.svg" alt="edit" />
-                            </div>
-                        </td>
-                        <td>
-                            <div
-                                class="icon-circle"
-                                (click)="userData.deleteActivity(day.key, day.value, i, activityIndex)"
+                    ></ngx-mat-timepicker>
+                    <ng-template #dialHint>
+                      <p>
+                        <button
+                          (click)="userData.updateDate(day.key,day.value,day.value.activities[activityIndex], -1);picker.close();"
+                          >
+                          &lt;&lt;
+                        </button>
+                        {{activity.time.substring(0,10)}}
+                        <button
+                          (click)="userData.updateDate(day.key,day.value,day.value.activities[activityIndex], 1);picker.close();"
+                          >
+                          &gt;&gt;
+                        </button>
+                      </p>
+                    </ng-template>
+                  </td>
+                  <td>{{ activity.activity }}</td>
+                  <td style="width: 100%">
+                    @if (userData.typeList | async | typeMap; as types) {
+                      <div>
+                        @if (types[activity.activity] && types[activity.activity].length) {
+                          <select
+                            style="width: 100%"
+                            class="custom-select"
+                            (input)="activity.activityDetails = $event.target.value;userData.saveEvent(day.key, day.value)"
                             >
-                                <img
-                                    src="../assets/images/baseline-delete_forever-24px.svg"
-                                    alt="delete"
-                                />
-                            </div>
-                        </td>
-                    </tr>
-                    <tr *ngIf="activity.notes">
-                        <td colspan="5">{{activity.notes}}</td>
-                    </tr>
-                </ng-container>
+                            @for (option of types[activity.activity]; track option) {
+                              <option
+                                [selected]="option === activity.activityDetails"
+                                >
+                                {{option}}
+                              </option>
+                            }
+                            @if (types[activity.activity] && types[activity.activity].indexOf(activity.activityDetails) === -1 && activity.activityDetails) {
+                              <option
+                                >
+                                {{activity.activityDetails}}
+                              </option>
+                            }
+                          </select>
+                        } @else {
+                          {{activity.activityDetails}}
+                        }
+                      </div>
+                    }
+                  </td>
+                  <td>
+                    <div class="icon-circle" (click)="note(day, activityIndex)">
+                      <img src="../assets/images/edit.svg" alt="edit" />
+                    </div>
+                  </td>
+                  <td>
+                    <div
+                      class="icon-circle"
+                      (click)="userData.deleteActivity(day.key, day.value, i, activityIndex)"
+                      >
+                      <img
+                        src="../assets/images/baseline-delete_forever-24px.svg"
+                        alt="delete"
+                        />
+                    </div>
+                  </td>
+                </tr>
+                @if (activity.notes) {
+                  <tr>
+                    <td colspan="5">{{activity.notes}}</td>
+                  </tr>
+                }
+              }
             </table>
-        </div>
-    </div>
-
+          </div>
+        }
+      </div>
+    }
     <div class="main">
-        <div style="margin-top: 250px">User {{state.uid}}</div>
-        <div>Family {{userData.familyId}}</div>
-        <div>
-            Share Child
-            <a
-                target="_blank"
-                [href]="'mailto:?subject=Baby%20Log%3A%20Add%20' + userData.child + '%20to%20your%20account&body=Here is%20the%20link%20to%20add%20' + userData.child + '%20to%20your%20Baby%20Log%20account%3A%0D%0A%0D%0Ahttps://baby.fluin.io/attach/' + userData.familyId + '/' + userData.child"
-            >
-                <svg style="width: 24px; height: 24px" viewBox="0 0 24 24">
-                    <path
-                        fill="currentColor"
-                        d="M18,16.08C17.24,16.08 16.56,16.38 16.04,16.85L8.91,12.7C8.96,12.47 9,12.24 9,12C9,11.76 8.96,11.53 8.91,11.3L15.96,7.19C16.5,7.69 17.21,8 18,8A3,3 0 0,0 21,5A3,3 0 0,0 18,2A3,3 0 0,0 15,5C15,5.24 15.04,5.47 15.09,5.7L8.04,9.81C7.5,9.31 6.79,9 6,9A3,3 0 0,0 3,12A3,3 0 0,0 6,15C6.79,15 7.5,14.69 8.04,14.19L15.16,18.34C15.11,18.55 15.08,18.77 15.08,19C15.08,20.61 16.39,21.91 18,21.91C19.61,21.91 20.92,20.61 20.92,19A2.92,2.92 0 0,0 18,16.08Z"
-                    />
-                </svg>
-            </a>
-        </div>
-        <!-- <h3 i18n>Settings</h3> -->
+      <div style="margin-top: 250px">User {{state.uid}}</div>
+      <div>Family {{userData.familyId}}</div>
+      <div>
+        Share Child
+        <a
+          target="_blank"
+          [href]="'mailto:?subject=Baby%20Log%3A%20Add%20' + userData.child + '%20to%20your%20account&body=Here is%20the%20link%20to%20add%20' + userData.child + '%20to%20your%20Baby%20Log%20account%3A%0D%0A%0D%0Ahttps://baby.fluin.io/attach/' + userData.familyId + '/' + userData.child"
+          >
+          <svg style="width: 24px; height: 24px" viewBox="0 0 24 24">
+            <path
+              fill="currentColor"
+              d="M18,16.08C17.24,16.08 16.56,16.38 16.04,16.85L8.91,12.7C8.96,12.47 9,12.24 9,12C9,11.76 8.96,11.53 8.91,11.3L15.96,7.19C16.5,7.69 17.21,8 18,8A3,3 0 0,0 21,5A3,3 0 0,0 18,2A3,3 0 0,0 15,5C15,5.24 15.04,5.47 15.09,5.7L8.04,9.81C7.5,9.31 6.79,9 6,9A3,3 0 0,0 3,12A3,3 0 0,0 6,15C6.79,15 7.5,14.69 8.04,14.19L15.16,18.34C15.11,18.55 15.08,18.77 15.08,19C15.08,20.61 16.39,21.91 18,21.91C19.61,21.91 20.92,20.61 20.92,19A2.92,2.92 0 0,0 18,16.08Z"
+              />
+          </svg>
+        </a>
+      </div>
+      <!-- <h3 i18n>Settings</h3> -->
     </div>
-</ng-container>
+  }
