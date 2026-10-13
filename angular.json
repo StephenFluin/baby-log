@@ -70,18 +70,18 @@
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "options": {
-            "browserTarget": "baby-log:build"
+            "buildTarget": "baby-log:build"
           },
           "configurations": {
             "production": {
-              "browserTarget": "baby-log:build:production"
+              "buildTarget": "baby-log:build:production"
             }
           }
         },
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "browserTarget": "baby-log:build"
+            "buildTarget": "baby-log:build"
           }
         },
         "test": {
