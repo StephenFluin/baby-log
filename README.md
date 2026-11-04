@@ -5,7 +5,7 @@ Realtime Database and Google sign-in. Children's names are only stored locally o
 
 ## Requirements
 
-Node 24 (see `.nvmrc`), or Node 22.22.3+.
+Node 24 (see `.nvmrc`).
 
 ```bash
 npm ci

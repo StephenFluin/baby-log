@@ -15,7 +15,7 @@
   },
   "private": true,
   "engines": {
-    "node": "^22.22.3 || >=24.15.0"
+    "node": ">=24.15.0"
   },
   "dependencies": {
     "@angular/cdk": "^22.2.6",
